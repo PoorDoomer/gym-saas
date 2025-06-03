@@ -28,8 +28,23 @@ export async function updateSession(request: NextRequest) {
   // issues with users being randomly logged out.
 
   const {
-    data: { user },
-  } = await supabase.auth.getUser()
+    data: { session },
+    error: sessionError
+  } = await supabase.auth.getSession()
+
+  const user = session?.user
+
+  if (sessionError) {
+    console.error('Session error', sessionError)
+  }
+
+  if (!session && user) {
+    await supabase.auth.signOut()
+  }
+
+  if (session && session.expires_at && session.expires_at * 1000 < Date.now()) {
+    await supabase.auth.refreshSession()
+  }
 
   console.log('Middleware - User after getUser:', user ? user.email : 'No user after getUser');
   console.log('Middleware - Supabase response cookies after setAll:', supabaseResponse.cookies.getAll());

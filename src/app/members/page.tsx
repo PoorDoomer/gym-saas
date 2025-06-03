@@ -1,6 +1,8 @@
 "use client"
 
 import { useState, useEffect } from 'react'
+import DOMPurify from 'dompurify'
+import { memberSchema, MemberSchema } from '@/lib/validation/memberSchema'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -37,17 +39,7 @@ import { Member } from '@/lib/types'
 import { getMembers, getMemberStats, createMember, updateMember, deleteMember, getMembershipPlans } from '@/lib/services/members'
 import { useTranslation } from '@/lib/i18n'
 
-interface MemberFormData {
-  first_name: string
-  last_name: string
-  email: string
-  phone?: string
-  date_of_birth?: string
-  emergency_contact_name?: string
-  emergency_contact_phone?: string
-  membership_plan_id?: string
-  notes?: string
-}
+type MemberFormData = MemberSchema
 
 interface MembershipPlan {
   id: string
@@ -63,6 +55,7 @@ export default function MembersPage() {
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const [page, setPage] = useState(1)
   const [editingMember, setEditingMember] = useState<Member | null>(null)
   const [qrDialogOpen, setQrDialogOpen] = useState(false)
   const [selectedMemberForQr, setSelectedMemberForQr] = useState<Member | null>(null)
@@ -86,14 +79,14 @@ export default function MembersPage() {
 
   // Fetch data on component mount
   useEffect(() => {
-    loadData()
-  }, [])
+    loadData(page)
+  }, [page])
 
-  const loadData = async () => {
+  const loadData = async (pageNum = page) => {
     setLoading(true)
     try {
       const [membersResponse, statsData, plansData] = await Promise.all([
-        getMembers({ limit: 1000 }), // Get all members by setting a high limit
+        getMembers({ page: pageNum, limit: 10 }),
         getMemberStats(),
         getMembershipPlans()
       ])
@@ -124,10 +117,21 @@ export default function MembersPage() {
 
   const handleSubmit = async () => {
     try {
+      const parsed = memberSchema.safeParse(formData)
+      if (!parsed.success) {
+        alert(parsed.error.errors[0].message)
+        return
+      }
+
+      const sanitized: MemberSchema = {
+        ...parsed.data,
+        notes: DOMPurify.sanitize(parsed.data.notes || '')
+      }
+
       if (editingMember) {
-        await updateMember(editingMember.id, formData)
+        await updateMember(editingMember.id, sanitized)
       } else {
-        await createMember(formData)
+        await createMember(sanitized)
       }
       await loadData() // Refresh data
       handleCloseDialog()
@@ -444,6 +448,7 @@ export default function MembersPage() {
             <Search className="h-4 w-4 text-muted-foreground" />
             <Input
               placeholder={t('members.searchPlaceholder')}
+              aria-label="Search members"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="flex-1"
@@ -529,17 +534,21 @@ export default function MembersPage() {
             ))}
           </div>
 
-          {filteredMembers.length === 0 && (
-            <div className="text-center py-8">
-              <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-medium mb-2">{t('members.noMembersFound')}</h3>
-              <p className="text-muted-foreground">
-                {searchTerm ? 'Try adjusting your search criteria' : 'Add your first member to get started'}
-              </p>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-    </div>
-  )
+        {filteredMembers.length === 0 && (
+          <div className="text-center py-8">
+            <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+            <h3 className="text-lg font-medium mb-2">{t('members.noMembersFound')}</h3>
+            <p className="text-muted-foreground">
+              {searchTerm ? 'Try adjusting your search criteria' : 'Add your first member to get started'}
+            </p>
+          </div>
+        )}
+        <div className="flex justify-between mt-4">
+          <Button variant="outline" disabled={page === 1} onClick={() => setPage(p => Math.max(1, p - 1))}>Prev</Button>
+          <Button variant="outline" onClick={() => setPage(p => p + 1)}>Next</Button>
+        </div>
+      </CardContent>
+    </Card>
+  </div>
+)
 }
