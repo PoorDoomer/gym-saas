@@ -1,0 +1,64 @@
+{
+  "nav": {
+    "dashboard": "Panel de Control",
+    "members": "Miembros",
+    "classes": "Clases",
+    "trainers": "Entrenadores",
+    "checkins": "Entradas",
+    "payments": "Pagos",
+    "reports": "Reportes",
+    "settings": "Configuración"
+  },
+  "common": {
+    "add": "Añadir",
+    "edit": "Editar",
+    "delete": "Eliminar",
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "search": "Buscar",
+    "loading": "Cargando",
+    "error": "Error",
+    "success": "Éxito",
+    "name": "Nombre",
+    "email": "Correo electrónico",
+    "phone": "Teléfono",
+    "status": "Estado",
+    "active": "Activo",
+    "inactive": "Inactivo",
+    "actions": "Acciones"
+  },
+  "members": {
+    "title": "Miembros",
+    "subtitle": "Gestiona los miembros de tu gimnasio",
+    "addMember": "Añadir Miembro",
+    "editMember": "Editar Miembro",
+    "firstName": "Nombre",
+    "lastName": "Apellido",
+    "emergencyContact": "Contacto de Emergencia",
+    "emergencyPhone": "Teléfono de Emergencia",
+    "notes": "Notas",
+    "joinedDate": "Fecha de Ingreso",
+    "totalMembers": "Total de Miembros",
+    "activeMembers": "Miembros Activos",
+    "newThisMonth": "Nuevos este Mes",
+    "monthlyRevenue": "Ingresos Mensuales",
+    "noMembersFound": "No se encontraron miembros",
+    "searchPlaceholder": "Buscar miembros por nombre o correo electrónico..."
+  },
+  "dashboard": {
+    "title": "Panel de Control",
+    "subtitle": "Resumen de tu gimnasio",
+    "welcomeBack": "Bienvenido de vuelta",
+    "todayOverview": "Resumen de Hoy",
+    "quickActions": "Acciones Rápidas"
+  },
+  "auth": {
+    "login": "Iniciar Sesión",
+    "signup": "Registrarse",
+    "logout": "Cerrar Sesión",
+    "password": "Contraseña",
+    "confirmPassword": "Confirmar Contraseña",
+    "forgotPassword": "Olvidé mi Contraseña",
+    "resetPassword": "Restablecer Contraseña"
+  }
+} 

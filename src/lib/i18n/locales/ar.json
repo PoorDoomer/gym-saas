@@ -1,0 +1,64 @@
+{
+  "nav": {
+    "dashboard": "لوحة التحكم",
+    "members": "الأعضاء",
+    "classes": "الفصول",
+    "trainers": "المدربين",
+    "checkins": "تسجيل الدخول",
+    "payments": "المدفوعات",
+    "reports": "التقارير",
+    "settings": "الإعدادات"
+  },
+  "common": {
+    "add": "إضافة",
+    "edit": "تعديل",
+    "delete": "حذف",
+    "save": "حفظ",
+    "cancel": "إلغاء",
+    "search": "بحث",
+    "loading": "جاري التحميل",
+    "error": "خطأ",
+    "success": "نجح",
+    "name": "الاسم",
+    "email": "البريد الإلكتروني",
+    "phone": "الهاتف",
+    "status": "الحالة",
+    "active": "نشط",
+    "inactive": "غير نشط",
+    "actions": "الإجراءات"
+  },
+  "members": {
+    "title": "الأعضاء",
+    "subtitle": "إدارة أعضاء الصالة الرياضية",
+    "addMember": "إضافة عضو",
+    "editMember": "تعديل العضو",
+    "firstName": "الاسم الأول",
+    "lastName": "اسم العائلة",
+    "emergencyContact": "جهة الاتصال الطارئة",
+    "emergencyPhone": "هاتف الطوارئ",
+    "notes": "الملاحظات",
+    "joinedDate": "تاريخ الانضمام",
+    "totalMembers": "إجمالي الأعضاء",
+    "activeMembers": "الأعضاء النشطون",
+    "newThisMonth": "جديد هذا الشهر",
+    "monthlyRevenue": "الإيرادات الشهرية",
+    "noMembersFound": "لم يتم العثور على أعضاء",
+    "searchPlaceholder": "البحث عن الأعضاء بالاسم أو البريد الإلكتروني..."
+  },
+  "dashboard": {
+    "title": "لوحة التحكم",
+    "subtitle": "نظرة عامة على صالتك الرياضية",
+    "welcomeBack": "مرحباً بعودتك",
+    "todayOverview": "نظرة عامة على اليوم",
+    "quickActions": "الإجراءات السريعة"
+  },
+  "auth": {
+    "login": "تسجيل الدخول",
+    "signup": "إنشاء حساب",
+    "logout": "تسجيل الخروج",
+    "password": "كلمة المرور",
+    "confirmPassword": "تأكيد كلمة المرور",
+    "forgotPassword": "نسيت كلمة المرور",
+    "resetPassword": "إعادة تعيين كلمة المرور"
+  }
+} 

@@ -1,0 +1,4 @@
+@echo off
+echo NEXT_PUBLIC_SUPABASE_URL=https://drlcdzmwyspdxqqclthc.supabase.co > .env.local
+echo NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRybGNkem13eXNwZHhxcWNsdGhjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDgzNjA0MDcsImV4cCI6MjA2MzkzNjQwN30.UvZrKvbfEF9BB0bBGH32NZQVleeaXPB1ITthEK0Yhyg >> .env.local
+echo Environment file created successfully! 

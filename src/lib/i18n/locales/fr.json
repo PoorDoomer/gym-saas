@@ -1,0 +1,64 @@
+{
+  "nav": {
+    "dashboard": "Tableau de bord",
+    "members": "Membres",
+    "classes": "Cours",
+    "trainers": "Entraîneurs",
+    "checkins": "Entrées",
+    "payments": "Paiements",
+    "reports": "Rapports",
+    "settings": "Paramètres"
+  },
+  "common": {
+    "add": "Ajouter",
+    "edit": "Modifier",
+    "delete": "Supprimer",
+    "save": "Enregistrer",
+    "cancel": "Annuler",
+    "search": "Rechercher",
+    "loading": "Chargement",
+    "error": "Erreur",
+    "success": "Succès",
+    "name": "Nom",
+    "email": "E-mail",
+    "phone": "Téléphone",
+    "status": "Statut",
+    "active": "Actif",
+    "inactive": "Inactif",
+    "actions": "Actions"
+  },
+  "members": {
+    "title": "Membres",
+    "subtitle": "Gérez vos membres de salle de sport",
+    "addMember": "Ajouter un membre",
+    "editMember": "Modifier le membre",
+    "firstName": "Prénom",
+    "lastName": "Nom de famille",
+    "emergencyContact": "Contact d'urgence",
+    "emergencyPhone": "Téléphone d'urgence",
+    "notes": "Notes",
+    "joinedDate": "Inscrit le",
+    "totalMembers": "Total des membres",
+    "activeMembers": "Membres actifs",
+    "newThisMonth": "Nouveaux ce mois",
+    "monthlyRevenue": "Revenus mensuels",
+    "noMembersFound": "Aucun membre trouvé",
+    "searchPlaceholder": "Rechercher des membres par nom ou e-mail..."
+  },
+  "dashboard": {
+    "title": "Tableau de bord",
+    "subtitle": "Aperçu de votre salle de sport",
+    "welcomeBack": "Bon retour",
+    "todayOverview": "Aperçu d'aujourd'hui",
+    "quickActions": "Actions rapides"
+  },
+  "auth": {
+    "login": "Connexion",
+    "signup": "S'inscrire",
+    "logout": "Déconnexion",
+    "password": "Mot de passe",
+    "confirmPassword": "Confirmer le mot de passe",
+    "forgotPassword": "Mot de passe oublié",
+    "resetPassword": "Réinitialiser le mot de passe"
+  }
+} 
