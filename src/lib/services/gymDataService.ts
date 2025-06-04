@@ -13,254 +13,351 @@ export class GymDataService {
     return gymId
   }
 
+  // Generic error handler to prevent SQL exposure
+  private handleError(error: any, operation: string): never {
+    // Log error server-side only, never expose SQL details to client
+    if (process.env.NODE_ENV === 'development') {
+      console.error(`Gym data service error in ${operation}:`, error.message)
+    }
+    
+    // Always throw generic error message to client
+    throw new Error(`Failed to ${operation}. Please try again.`)
+  }
+
   // Members with gym isolation
   async getMembers() {
-    const gymId = this.getCurrentGym()
-    const { data, error } = await supabase
-      .from('members')
-      .select(`
-        *,
-        membership_plans (
-          name,
-          price,
-          duration_months
-        )
-      `)
-      .eq('gym_id', gymId)
-      .order('created_at', { ascending: false })
+    try {
+      const gymId = this.getCurrentGym()
+      const { data, error } = await supabase
+        .from('members')
+        .select(`
+          *,
+          membership_plans (
+            name,
+            price,
+            duration_months
+          )
+        `)
+        .eq('gym_id', gymId)
+        .order('created_at', { ascending: false })
 
-    if (error) throw error
-    return data
+      if (error) this.handleError(error, 'fetch members')
+      return data || []
+    } catch (error) {
+      if (error instanceof Error && error.message.includes('Failed to')) {
+        throw error
+      }
+      this.handleError(error, 'fetch members')
+    }
   }
 
   async createMember(memberData: any) {
-    const gymId = this.getCurrentGym()
-    const { data, error } = await supabase
-      .from('members')
-      .insert({
-        ...memberData,
-        gym_id: gymId
-      })
-      .select()
+    try {
+      const gymId = this.getCurrentGym()
+      const { data, error } = await supabase
+        .from('members')
+        .insert({
+          ...memberData,
+          gym_id: gymId
+        })
+        .select()
 
-    if (error) throw error
-    return data
+      if (error) this.handleError(error, 'create member')
+      return data
+    } catch (error) {
+      if (error instanceof Error && error.message.includes('Failed to')) {
+        throw error
+      }
+      this.handleError(error, 'create member')
+    }
   }
 
   // Trainers with gym isolation
   async getTrainers() {
-    const gymId = this.getCurrentGym()
-    const { data, error } = await supabase
-      .from('trainers')
-      .select(`
-        *,
-        trainer_sports (
-          skill_level,
-          sports (
-            name,
-            category
+    try {
+      const gymId = this.getCurrentGym()
+      const { data, error } = await supabase
+        .from('trainers')
+        .select(`
+          *,
+          trainer_sports (
+            skill_level,
+            sports (
+              name,
+              category
+            )
           )
-        )
-      `)
-      .eq('gym_id', gymId)
-      .order('created_at', { ascending: false })
+        `)
+        .eq('gym_id', gymId)
+        .order('created_at', { ascending: false })
 
-    if (error) throw error
-    return data
+      if (error) this.handleError(error, 'fetch trainers')
+      return data || []
+    } catch (error) {
+      if (error instanceof Error && error.message.includes('Failed to')) {
+        throw error
+      }
+      this.handleError(error, 'fetch trainers')
+    }
   }
 
   async createTrainer(trainerData: any) {
-    const gymId = this.getCurrentGym()
-    const { data, error } = await supabase
-      .from('trainers')
-      .insert({
-        ...trainerData,
-        gym_id: gymId
-      })
-      .select()
+    try {
+      const gymId = this.getCurrentGym()
+      const { data, error } = await supabase
+        .from('trainers')
+        .insert({
+          ...trainerData,
+          gym_id: gymId
+        })
+        .select()
 
-    if (error) throw error
-    return data
+      if (error) this.handleError(error, 'create trainer')
+      return data
+    } catch (error) {
+      if (error instanceof Error && error.message.includes('Failed to')) {
+        throw error
+      }
+      this.handleError(error, 'create trainer')
+    }
   }
 
   // Classes with gym isolation
   async getClasses() {
-    const gymId = this.getCurrentGym()
-    const { data, error } = await supabase
-      .from('classes')
-      .select(`
-        *,
-        trainers (
-          first_name,
-          last_name
-        ),
-        sports (
-          name,
-          category
-        )
-      `)
-      .eq('gym_id', gymId)
-      .order('created_at', { ascending: false })
+    try {
+      const gymId = this.getCurrentGym()
+      const { data, error } = await supabase
+        .from('classes')
+        .select(`
+          *,
+          trainers (
+            first_name,
+            last_name
+          ),
+          sports (
+            name,
+            category
+          )
+        `)
+        .eq('gym_id', gymId)
+        .order('created_at', { ascending: false })
 
-    if (error) throw error
-    return data
+      if (error) this.handleError(error, 'fetch classes')
+      return data || []
+    } catch (error) {
+      if (error instanceof Error && error.message.includes('Failed to')) {
+        throw error
+      }
+      this.handleError(error, 'fetch classes')
+    }
   }
 
   async createClass(classData: any) {
-    const gymId = this.getCurrentGym()
-    const { data, error } = await supabase
-      .from('classes')
-      .insert({
-        ...classData,
-        gym_id: gymId
-      })
-      .select()
+    try {
+      const gymId = this.getCurrentGym()
+      const { data, error } = await supabase
+        .from('classes')
+        .insert({
+          ...classData,
+          gym_id: gymId
+        })
+        .select()
 
-    if (error) throw error
-    return data
+      if (error) this.handleError(error, 'create class')
+      return data
+    } catch (error) {
+      if (error instanceof Error && error.message.includes('Failed to')) {
+        throw error
+      }
+      this.handleError(error, 'create class')
+    }
   }
 
   // Class schedules with gym isolation
   async getClassSchedules() {
-    const gymId = this.getCurrentGym()
-    const { data, error } = await supabase
-      .from('class_schedules')
-      .select(`
-        *,
-        classes (
-          name,
-          description,
-          capacity
-        ),
-        trainers (
-          first_name,
-          last_name
-        )
-      `)
-      .eq('gym_id', gymId)
-      .order('scheduled_date', { ascending: true })
+    try {
+      const gymId = this.getCurrentGym()
+      const { data, error } = await supabase
+        .from('class_schedules')
+        .select(`
+          *,
+          classes (
+            name,
+            description,
+            capacity
+          ),
+          trainers (
+            first_name,
+            last_name
+          )
+        `)
+        .eq('gym_id', gymId)
+        .order('scheduled_date', { ascending: true })
 
-    if (error) throw error
-    return data
+      if (error) this.handleError(error, 'fetch class schedules')
+      return data || []
+    } catch (error) {
+      if (error instanceof Error && error.message.includes('Failed to')) {
+        throw error
+      }
+      this.handleError(error, 'fetch class schedules')
+    }
   }
 
   // Sports with gym isolation (or global if no gym_id)
   async getSports() {
-    const gymId = this.getCurrentGym()
-    const { data, error } = await supabase
-      .from('sports')
-      .select('*')
-      .or(`gym_id.is.null,gym_id.eq.${gymId}`)
-      .order('name', { ascending: true })
+    try {
+      const gymId = this.getCurrentGym()
+      const { data, error } = await supabase
+        .from('sports')
+        .select('*')
+        .or(`gym_id.is.null,gym_id.eq.${gymId}`)
+        .order('name', { ascending: true })
 
-    if (error) throw error
-    return data
+      if (error) this.handleError(error, 'fetch sports')
+      return data || []
+    } catch (error) {
+      if (error instanceof Error && error.message.includes('Failed to')) {
+        throw error
+      }
+      this.handleError(error, 'fetch sports')
+    }
   }
 
   async createSport(sportData: any) {
-    const gymId = this.getCurrentGym()
-    const { data, error } = await supabase
-      .from('sports')
-      .insert({
-        ...sportData,
-        gym_id: gymId
-      })
-      .select()
+    try {
+      const gymId = this.getCurrentGym()
+      const { data, error } = await supabase
+        .from('sports')
+        .insert({
+          ...sportData,
+          gym_id: gymId
+        })
+        .select()
 
-    if (error) throw error
-    return data
+      if (error) this.handleError(error, 'create sport')
+      return data
+    } catch (error) {
+      if (error instanceof Error && error.message.includes('Failed to')) {
+        throw error
+      }
+      this.handleError(error, 'create sport')
+    }
   }
 
   // Membership plans with gym isolation
   async getMembershipPlans() {
-    const gymId = this.getCurrentGym()
-    const { data, error } = await supabase
-      .from('membership_plans')
-      .select('*')
-      .eq('gym_id', gymId)
-      .order('price', { ascending: true })
-
-    if (error) throw error
-    return data
-  }
-
-  async createMembershipPlan(planData: any) {
-    const gymId = this.getCurrentGym()
-    const { data, error } = await supabase
-      .from('membership_plans')
-      .insert({
-        ...planData,
-        gym_id: gymId
-      })
-      .select()
-
-    if (error) throw error
-    return data
-  }
-
-  // Analytics with gym isolation
-  async getGymAnalytics() {
-    const gymId = this.getCurrentGym()
-    
-    // Get multiple analytics in parallel
-    const [
-      membersResult,
-      trainersResult,
-      classesResult,
-      enrollmentsResult,
-      revenueResult
-    ] = await Promise.allSettled([
-      supabase
-        .from('members')
-        .select('id, is_active, created_at')
-        .eq('gym_id', gymId),
-      
-      supabase
-        .from('trainers')
-        .select('id, is_active')
-        .eq('gym_id', gymId),
-      
-      supabase
-        .from('classes')
-        .select('id, is_active')
-        .eq('gym_id', gymId),
-      
-      supabase
-        .from('class_enrollments')
-        .select('id, enrollment_status')
-        .eq('gym_id', gymId),
-      
-      supabase
-        .from('payments')
-        .select('amount, status, created_at')
+    try {
+      const gymId = this.getCurrentGym()
+      const { data, error } = await supabase
+        .from('membership_plans')
+        .select('*')
         .eq('gym_id', gymId)
-    ])
+        .order('price', { ascending: true })
 
-    // Process results
-    const members = membersResult.status === 'fulfilled' ? membersResult.value.data || [] : []
-    const trainers = trainersResult.status === 'fulfilled' ? trainersResult.value.data || [] : []
-    const classes = classesResult.status === 'fulfilled' ? classesResult.value.data || [] : []
-    const enrollments = enrollmentsResult.status === 'fulfilled' ? enrollmentsResult.value.data || [] : []
-    const revenue = revenueResult.status === 'fulfilled' ? revenueResult.value.data || [] : []
-
-    return {
-      totalMembers: members.length,
-      activeMembers: members.filter(m => m.is_active).length,
-      totalTrainers: trainers.length,
-      activeTrainers: trainers.filter(t => t.is_active).length,
-      totalClasses: classes.length,
-      activeClasses: classes.filter(c => c.is_active).length,
-      totalEnrollments: enrollments.length,
-      totalRevenue: revenue.reduce((sum, r) => sum + (r.amount || 0), 0),
-      members,
-      trainers,
-      classes,
-      enrollments,
-      revenue
+      if (error) this.handleError(error, 'fetch membership plans')
+      return data || []
+    } catch (error) {
+      if (error instanceof Error && error.message.includes('Failed to')) {
+        throw error
+      }
+      this.handleError(error, 'fetch membership plans')
     }
   }
 
-  // Validate user access to gym
+  async createMembershipPlan(planData: any) {
+    try {
+      const gymId = this.getCurrentGym()
+      const { data, error } = await supabase
+        .from('membership_plans')
+        .insert({
+          ...planData,
+          gym_id: gymId
+        })
+        .select()
+
+      if (error) this.handleError(error, 'create membership plan')
+      return data
+    } catch (error) {
+      if (error instanceof Error && error.message.includes('Failed to')) {
+        throw error
+      }
+      this.handleError(error, 'create membership plan')
+    }
+  }
+
+  // Analytics with gym isolation - simplified and secure
+  async getGymAnalytics() {
+    try {
+      const gymId = this.getCurrentGym()
+      
+      // Get multiple analytics in parallel with proper error handling
+      const [
+        membersResult,
+        trainersResult,
+        classesResult,
+        enrollmentsResult,
+        revenueResult
+      ] = await Promise.allSettled([
+        supabase
+          .from('members')
+          .select('id, is_active, created_at')
+          .eq('gym_id', gymId),
+        
+        supabase
+          .from('trainers')
+          .select('id, is_active')
+          .eq('gym_id', gymId),
+        
+        supabase
+          .from('classes')
+          .select('id, is_active')
+          .eq('gym_id', gymId),
+        
+        supabase
+          .from('class_enrollments')
+          .select('id, enrollment_status')
+          .eq('gym_id', gymId),
+        
+        supabase
+          .from('payments')
+          .select('amount, status, created_at')
+          .eq('gym_id', gymId)
+      ])
+
+      // Process results safely
+      const members = membersResult.status === 'fulfilled' && !membersResult.value.error ? 
+        membersResult.value.data || [] : []
+      const trainers = trainersResult.status === 'fulfilled' && !trainersResult.value.error ? 
+        trainersResult.value.data || [] : []
+      const classes = classesResult.status === 'fulfilled' && !classesResult.value.error ? 
+        classesResult.value.data || [] : []
+      const enrollments = enrollmentsResult.status === 'fulfilled' && !enrollmentsResult.value.error ? 
+        enrollmentsResult.value.data || [] : []
+      const revenue = revenueResult.status === 'fulfilled' && !revenueResult.value.error ? 
+        revenueResult.value.data || [] : []
+
+      return {
+        totalMembers: members.length,
+        activeMembers: members.filter(m => m.is_active).length,
+        totalTrainers: trainers.length,
+        activeTrainers: trainers.filter(t => t.is_active).length,
+        totalClasses: classes.length,
+        activeClasses: classes.filter(c => c.is_active).length,
+        totalEnrollments: enrollments.length,
+        totalRevenue: revenue.reduce((sum, r) => sum + (r.amount || 0), 0),
+        members,
+        trainers,
+        classes,
+        enrollments,
+        revenue
+      }
+    } catch (error) {
+      this.handleError(error, 'fetch analytics')
+    }
+  }
+
+  // Validate user access to gym - secure implementation
   async validateGymAccess(gymId: string): Promise<boolean> {
     try {
       const { data: { user }, error: userError } = await supabase.auth.getUser()

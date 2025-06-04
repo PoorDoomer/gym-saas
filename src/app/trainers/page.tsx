@@ -11,7 +11,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Checkbox } from '@/components/ui/checkbox'
-import { Plus, Search, Edit, Trash2, Users, DollarSign, Star, Clock, Trophy, Activity, Key, Copy, Eye, EyeOff } from 'lucide-react'
+import { Plus, Search, Edit, Trash2, Users, DollarSign, Star, Clock, Trophy, Activity, Key, Copy, Eye, EyeOff, X } from 'lucide-react'
 import { PageLoader, CardSkeleton } from '@/components/ui/loading-spinner'
 import { useTranslation } from '@/lib/i18n'
 import { Trainer } from '@/lib/types'
@@ -299,41 +299,97 @@ export default function TrainersPage() {
 
                 <div className="space-y-2">
                   <Label htmlFor="selected_sports">{t('trainers.selectedSports')}</Label>
-                  <div className="flex flex-wrap gap-2">
-                    {sports.map((sport) => (
-                      <Checkbox
-                        key={sport.id}
-                        id={`sport_${sport.id}`}
-                        checked={selectedSports.some(s => s.sport_id === sport.id)}
-                        onCheckedChange={(checked) => handleSportToggle(sport.id, checked)}
-                      >
-                        {sport.name}
-                      </Checkbox>
-                    ))}
+                  <div className="grid grid-cols-2 gap-3">
+                    {sports.map((sport) => {
+                      const isSelected = selectedSports.some(s => s.sport_id === sport.id)
+                      const selectedSport = selectedSports.find(s => s.sport_id === sport.id)
+                      
+                      return (
+                        <div key={sport.id} className="border rounded-lg p-3 space-y-2">
+                          <div className="flex items-center space-x-2">
+                            <Checkbox
+                              id={`sport_${sport.id}`}
+                              checked={isSelected}
+                              onCheckedChange={(checked) => handleSportToggle(sport.id, checked)}
+                              className="cursor-pointer"
+                            />
+                            <Label 
+                              htmlFor={`sport_${sport.id}`} 
+                              className={`cursor-pointer font-medium ${isSelected ? 'text-blue-600' : 'text-gray-700'}`}
+                            >
+                              {sport.name}
+                            </Label>
+                            {isSelected && (
+                              <Badge variant="outline" className="text-xs bg-blue-50 text-blue-600">
+                                Selected
+                              </Badge>
+                            )}
+                          </div>
+                          
+                          {isSelected && (
+                            <div className="mt-2">
+                              <Select
+                                value={selectedSport?.skill_level || 'intermediate'}
+                                onValueChange={(value) => handleSkillLevelChange(sport.id, value)}
+                              >
+                                <SelectTrigger className="h-8 text-sm">
+                                  <SelectValue placeholder="Select skill level" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="beginner">
+                                    <div className="flex items-center space-x-2">
+                                      <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                                      <span>Beginner</span>
+                                    </div>
+                                  </SelectItem>
+                                  <SelectItem value="intermediate">
+                                    <div className="flex items-center space-x-2">
+                                      <div className="w-2 h-2 rounded-full bg-yellow-500"></div>
+                                      <span>Intermediate</span>
+                                    </div>
+                                  </SelectItem>
+                                  <SelectItem value="advanced">
+                                    <div className="flex items-center space-x-2">
+                                      <div className="w-2 h-2 rounded-full bg-orange-500"></div>
+                                      <span>Advanced</span>
+                                    </div>
+                                  </SelectItem>
+                                  <SelectItem value="expert">
+                                    <div className="flex items-center space-x-2">
+                                      <div className="w-2 h-2 rounded-full bg-red-500"></div>
+                                      <span>Expert</span>
+                                    </div>
+                                  </SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          )}
+                        </div>
+                      )
+                    })}
                   </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="skill_level">{t('trainers.skillLevel')}</Label>
-                  <div className="flex flex-wrap gap-2">
-                    {selectedSports.map((s) => (
-                      <Select
-                        key={`${s.sport_id}_${s.skill_level}`}
-                        value={s.skill_level}
-                        onValueChange={(value) => handleSkillLevelChange(s.sport_id, value as 'beginner' | 'intermediate' | 'advanced' | 'expert')}
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="beginner">Beginner</SelectItem>
-                          <SelectItem value="intermediate">Intermediate</SelectItem>
-                          <SelectItem value="advanced">Advanced</SelectItem>
-                          <SelectItem value="expert">Expert</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    ))}
-                  </div>
+                  
+                  {selectedSports.length > 0 && (
+                    <div className="mt-3 p-3 bg-blue-50 rounded-lg">
+                      <p className="text-sm font-medium text-blue-900 mb-2">Selected Sports Summary:</p>
+                      <div className="flex flex-wrap gap-2">
+                        {selectedSports.map((selectedSport) => {
+                          const sport = sports.find(s => s.id === selectedSport.sport_id)
+                          return (
+                            <Badge 
+                              key={selectedSport.sport_id}
+                              className={`${getSkillLevelColor(selectedSport.skill_level)} cursor-pointer`}
+                              onClick={() => handleSportToggle(selectedSport.sport_id, false)}
+                              title="Click to remove"
+                            >
+                              {sport?.name} ({selectedSport.skill_level})
+                              <X className="ml-1 h-3 w-3" />
+                            </Badge>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 <div className="flex justify-end space-x-2">
