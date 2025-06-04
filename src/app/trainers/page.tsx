@@ -11,11 +11,11 @@ import { Textarea } from '@/components/ui/textarea'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Checkbox } from '@/components/ui/checkbox'
-import { Plus, Search, Edit, Trash2, Users, DollarSign, Star, Clock, Trophy, Activity } from 'lucide-react'
+import { Plus, Search, Edit, Trash2, Users, DollarSign, Star, Clock, Trophy, Activity, Key, Copy, Eye, EyeOff } from 'lucide-react'
 import { PageLoader, CardSkeleton } from '@/components/ui/loading-spinner'
 import { useTranslation } from '@/lib/i18n'
 import { Trainer } from '@/lib/types'
-import { getTrainers, getTrainerStats, createTrainer, updateTrainer, deleteTrainer, CreateTrainerData, UpdateTrainerData, TrainerStats, TrainerWithSports } from '@/lib/services/trainers'
+import { getTrainers, getTrainerStats, createTrainer, updateTrainer, deleteTrainer, CreateTrainerData, UpdateTrainerData, TrainerStats, TrainerWithSports, CreateTrainerResult } from '@/lib/services/trainers'
 import { getSports, Sport } from '@/lib/services/sports'
 
 export default function TrainersPage() {
@@ -34,6 +34,12 @@ export default function TrainersPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [editingTrainer, setEditingTrainer] = useState<TrainerWithSports | null>(null)
   const [selectedSports, setSelectedSports] = useState<Array<{sport_id: string, skill_level: string}>>([])
+  const [createdTrainerCredentials, setCreatedTrainerCredentials] = useState<{
+    email: string
+    password: string
+    name: string
+  } | null>(null)
+  const [showPassword, setShowPassword] = useState(false)
 
   // Fetch data on component mount
   useEffect(() => {
@@ -84,16 +90,36 @@ export default function TrainersPage() {
 
       if (editingTrainer) {
         await updateTrainer(editingTrainer.id, trainerData as UpdateTrainerData)
+        setCreatedTrainerCredentials(null)
       } else {
-        await createTrainer(trainerData as CreateTrainerData)
+        const result: CreateTrainerResult = await createTrainer(trainerData as CreateTrainerData)
+        
+        if (result.success && result.user_account) {
+          // Show the generated credentials
+          setCreatedTrainerCredentials({
+            email: result.user_account.email,
+            password: result.user_account.temporary_password,
+            name: `${trainerData.first_name} ${trainerData.last_name}`
+          })
+        } else {
+          alert(`Failed to create trainer: ${result.error || 'Unknown error'}`)
+          return
+        }
       }
 
       await loadData() // Refresh data
       setIsDialogOpen(false)
       setEditingTrainer(null)
       setSelectedSports([])
+      
+      // Don't close credentials dialog, let user close it manually
+      if (!editingTrainer) {
+        // Show success message for new trainer
+        console.log('Trainer created successfully with credentials:', createdTrainerCredentials)
+      }
     } catch (error) {
       console.error('Failed to save trainer:', error)
+      alert('An error occurred while saving the trainer. Please try again.')
     }
   }
 
@@ -132,6 +158,11 @@ export default function TrainersPage() {
     setSelectedSports(prev => prev.map(s => 
       s.sport_id === sportId ? { ...s, skill_level: skillLevel } : s
     ))
+  }
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text)
+    // You could add a toast notification here
   }
 
   const getInitials = (firstName: string, lastName: string) => {
@@ -499,6 +530,104 @@ export default function TrainersPage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Trainer Credentials Dialog */}
+      <Dialog open={!!createdTrainerCredentials} onOpenChange={(open) => !open && setCreatedTrainerCredentials(null)}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center space-x-2 text-green-600">
+              <Key className="h-6 w-6" />
+              <span>Trainer Account Created!</span>
+            </DialogTitle>
+            <DialogDescription>
+              A new trainer account has been created with the following login credentials.
+              Please share these securely with the trainer.
+            </DialogDescription>
+          </DialogHeader>
+          
+          {createdTrainerCredentials && (
+            <div className="space-y-4">
+              <div className="p-4 bg-green-50 rounded-lg border border-green-200">
+                <h4 className="font-semibold text-green-800 mb-3">
+                  Account for: {createdTrainerCredentials.name}
+                </h4>
+                
+                <div className="space-y-3">
+                  <div>
+                    <Label className="text-sm font-medium text-green-700">Email Address</Label>
+                    <div className="flex items-center space-x-2 mt-1">
+                      <Input 
+                        value={createdTrainerCredentials.email} 
+                        readOnly 
+                        className="bg-white"
+                      />
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => copyToClipboard(createdTrainerCredentials.email)}
+                      >
+                        <Copy className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <Label className="text-sm font-medium text-green-700">Temporary Password</Label>
+                    <div className="flex items-center space-x-2 mt-1">
+                      <Input 
+                        type={showPassword ? "text" : "password"}
+                        value={createdTrainerCredentials.password} 
+                        readOnly 
+                        className="bg-white font-mono"
+                      />
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => setShowPassword(!showPassword)}
+                      >
+                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => copyToClipboard(createdTrainerCredentials.password)}
+                      >
+                        <Copy className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                <h4 className="font-medium text-blue-800 mb-2">📋 Next Steps:</h4>
+                <ul className="text-sm text-blue-700 space-y-1">
+                  <li>1. Share these credentials securely with the trainer</li>
+                  <li>2. Ask them to log in and change their password</li>
+                  <li>3. Trainer can access their portal at: <code className="bg-blue-100 px-1 rounded">/trainer-dashboard</code></li>
+                  <li>4. They can manage their classes, schedules, and member interactions</li>
+                </ul>
+              </div>
+
+              <div className="flex justify-between">
+                <Button 
+                  variant="outline"
+                  onClick={() => {
+                    const credentials = `Email: ${createdTrainerCredentials.email}\nPassword: ${createdTrainerCredentials.password}`
+                    copyToClipboard(credentials)
+                  }}
+                >
+                  <Copy className="h-4 w-4 mr-2" />
+                  Copy All
+                </Button>
+                <Button onClick={() => setCreatedTrainerCredentials(null)}>
+                  Got it!
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   )
 } 

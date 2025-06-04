@@ -41,6 +41,27 @@ export interface TrainerWithSports extends Trainer {
   }>
 }
 
+export interface CreateTrainerResult {
+  trainer: Trainer | null
+  user_account: {
+    email: string
+    temporary_password: string
+    user_id: string
+  } | null
+  success: boolean
+  error?: string
+}
+
+// Generate a secure random password
+function generateTemporaryPassword(): string {
+  const chars = 'ABCDEFGHJKMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789!@#$%&*'
+  let password = ''
+  for (let i = 0; i < 12; i++) {
+    password += chars.charAt(Math.floor(Math.random() * chars.length))
+  }
+  return password
+}
+
 // Get all trainers with their sports
 export async function getTrainers(): Promise<TrainerWithSports[]> {
   try {
@@ -98,13 +119,49 @@ export async function getTrainerById(id: string): Promise<TrainerWithSports | nu
   }
 }
 
-// Create new trainer with sports
-export async function createTrainer(trainerData: CreateTrainerData): Promise<Trainer | null> {
+// Create new trainer with user account and sports
+export async function createTrainer(trainerData: CreateTrainerData): Promise<CreateTrainerResult> {
   try {
-    // First create the trainer
+    // Generate temporary password
+    const temporaryPassword = generateTemporaryPassword()
+    
+    // Step 1: Create user account in Supabase Auth
+    const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+      email: trainerData.email,
+      password: temporaryPassword,
+      email_confirm: true, // Auto-confirm email
+      user_metadata: {
+        role: 'trainer',
+        first_name: trainerData.first_name,
+        last_name: trainerData.last_name,
+        full_name: `${trainerData.first_name} ${trainerData.last_name}`
+      }
+    })
+
+    if (authError) {
+      console.error('Error creating trainer user account:', authError)
+      return {
+        trainer: null,
+        user_account: null,
+        success: false,
+        error: `Failed to create user account: ${authError.message}`
+      }
+    }
+
+    if (!authData.user) {
+      return {
+        trainer: null,
+        user_account: null,
+        success: false,
+        error: 'Failed to create user account: No user returned'
+      }
+    }
+
+    // Step 2: Create trainer record in database
     const { data: trainer, error: trainerError } = await supabase
       .from('trainers')
       .insert([{
+        user_id: authData.user.id, // Link to auth user
         first_name: trainerData.first_name,
         last_name: trainerData.last_name,
         email: trainerData.email,
@@ -119,11 +176,46 @@ export async function createTrainer(trainerData: CreateTrainerData): Promise<Tra
       .single()
 
     if (trainerError) {
-      console.error('Error creating trainer:', trainerError)
-      throw trainerError
+      console.error('Error creating trainer record:', trainerError)
+      
+      // Cleanup: Delete the auth user if trainer creation failed
+      await supabase.auth.admin.deleteUser(authData.user.id)
+      
+      return {
+        trainer: null,
+        user_account: null,
+        success: false,
+        error: `Failed to create trainer record: ${trainerError.message}`
+      }
     }
 
-    // Then assign sports if any
+    // Step 3: Create user_roles entry
+    const { error: roleError } = await supabase
+      .from('user_roles')
+      .insert([{
+        user_id: authData.user.id,
+        role: 'trainer'
+      }])
+
+    if (roleError) {
+      console.error('Error creating trainer role:', roleError)
+      // Continue anyway, role can be added later
+    }
+
+    // Step 4: Create trainer_accounts entry
+    const { error: accountError } = await supabase
+      .from('trainer_accounts')
+      .insert([{
+        user_id: authData.user.id,
+        trainer_id: trainer.id
+      }])
+
+    if (accountError) {
+      console.error('Error creating trainer account link:', accountError)
+      // Continue anyway, link can be added later
+    }
+
+    // Step 5: Assign sports if any
     if (trainerData.selected_sports && trainerData.selected_sports.length > 0) {
       const sportsData = trainerData.selected_sports.map(sport => ({
         trainer_id: trainer.id,
@@ -141,10 +233,23 @@ export async function createTrainer(trainerData: CreateTrainerData): Promise<Tra
       }
     }
 
-    return trainer
+    return {
+      trainer,
+      user_account: {
+        email: trainerData.email,
+        temporary_password: temporaryPassword,
+        user_id: authData.user.id
+      },
+      success: true
+    }
   } catch (error) {
     console.error('Failed to create trainer:', error)
-    return null
+    return {
+      trainer: null,
+      user_account: null,
+      success: false,
+      error: `Unexpected error: ${error instanceof Error ? error.message : 'Unknown error'}`
+    }
   }
 }
 
