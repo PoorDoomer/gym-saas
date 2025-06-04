@@ -124,18 +124,28 @@ export default function MembersPage() {
 
       const sanitized: MemberSchema = {
         ...parsed.data,
-        notes: DOMPurify.sanitize(parsed.data.notes || '')
+        notes: DOMPurify.sanitize(parsed.data.notes || ''),
+        // Convert empty string to null for UUID fields to prevent database errors
+        membership_plan_id: parsed.data.membership_plan_id || undefined
       }
 
       if (editingMember) {
         await updateMember(editingMember.id, sanitized)
       } else {
-        await createMember(sanitized)
+        // Create member record (user account creation requires admin setup)
+        const result = await createMember(sanitized)
+        if (!result) {
+          alert('Failed to create member. Please try again.')
+          return
+        }
+        
+        alert(`Member "${sanitized.first_name} ${sanitized.last_name}" created successfully!\n\nNote: User account creation requires admin configuration. The member record has been created and can be used for gym management.`)
       }
       await loadData() // Refresh data
       handleCloseDialog()
     } catch (error) {
       console.error('Failed to save member:', error)
+      alert('Failed to save member. Please try again.')
     }
   }
 
@@ -226,7 +236,7 @@ export default function MembersPage() {
         </div>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
-            <Button onClick={() => setEditingMember(null)}>
+            <Button onClick={() => setEditingMember(null)} className="cursor-pointer">
               <UserPlus className="mr-2 h-4 w-4" />
               {t('members.addMember')}
             </Button>
@@ -336,10 +346,10 @@ export default function MembersPage() {
               </div>
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={handleCloseDialog}>
+              <Button variant="outline" onClick={handleCloseDialog} className="cursor-pointer">
                 {t('common.cancel')}
               </Button>
-              <Button onClick={handleSubmit}>
+              <Button onClick={handleSubmit} className="cursor-pointer">
                 {editingMember ? t('common.edit') : t('common.add')} {t('nav.members')}
               </Button>
             </DialogFooter>
@@ -371,10 +381,10 @@ export default function MembersPage() {
             </div>
           )}
           <DialogFooter>
-            <Button variant="outline" onClick={() => setQrDialogOpen(false)}>
+            <Button variant="outline" onClick={() => setQrDialogOpen(false)} className="cursor-pointer">
               Close
             </Button>
-            <Button onClick={downloadQRCode}>
+            <Button onClick={downloadQRCode} className="cursor-pointer">
               <Download className="mr-2 h-4 w-4" />
               Download
             </Button>
@@ -481,6 +491,7 @@ export default function MembersPage() {
                         size="sm"
                         onClick={() => generateQRCode(member)}
                         title="Generate QR Code"
+                        className="cursor-pointer"
                       >
                         <QrCode className="h-4 w-4" />
                       </Button>
@@ -488,6 +499,7 @@ export default function MembersPage() {
                         variant="ghost" 
                         size="sm"
                         onClick={() => handleEdit(member)}
+                        className="cursor-pointer"
                       >
                         <Edit className="h-4 w-4" />
                       </Button>
@@ -495,6 +507,7 @@ export default function MembersPage() {
                         variant="ghost" 
                         size="sm"
                         onClick={() => handleDelete(member.id)}
+                        className="cursor-pointer"
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>

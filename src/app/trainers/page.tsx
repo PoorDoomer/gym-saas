@@ -195,7 +195,7 @@ export default function TrainersPage() {
         <div className="flex items-center space-x-2">
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
-              <Button onClick={() => setEditingTrainer(null)}>
+              <Button onClick={() => setEditingTrainer(null)} className="cursor-pointer">
                 <Plus className="mr-2 h-4 w-4" />
                 {t('trainers.addTrainer')}
               </Button>
@@ -307,35 +307,35 @@ export default function TrainersPage() {
                       return (
                         <div key={sport.id} className="border rounded-lg p-3 space-y-2">
                           <div className="flex items-center space-x-2">
-                            <Checkbox
-                              id={`sport_${sport.id}`}
+                      <Checkbox
+                        id={`sport_${sport.id}`}
                               checked={isSelected}
-                              onCheckedChange={(checked) => handleSportToggle(sport.id, checked)}
+                        onCheckedChange={(checked) => handleSportToggle(sport.id, checked)}
                               className="cursor-pointer"
                             />
                             <Label 
                               htmlFor={`sport_${sport.id}`} 
                               className={`cursor-pointer font-medium ${isSelected ? 'text-blue-600' : 'text-gray-700'}`}
-                            >
-                              {sport.name}
+                      >
+                        {sport.name}
                             </Label>
                             {isSelected && (
                               <Badge variant="outline" className="text-xs bg-blue-50 text-blue-600">
                                 Selected
                               </Badge>
                             )}
-                          </div>
-                          
+                </div>
+
                           {isSelected && (
                             <div className="mt-2">
-                              <Select
+                      <Select
                                 value={selectedSport?.skill_level || 'intermediate'}
                                 onValueChange={(value) => handleSkillLevelChange(sport.id, value)}
-                              >
+                      >
                                 <SelectTrigger className="h-8 text-sm">
                                   <SelectValue placeholder="Select skill level" />
-                                </SelectTrigger>
-                                <SelectContent>
+                        </SelectTrigger>
+                        <SelectContent>
                                   <SelectItem value="beginner">
                                     <div className="flex items-center space-x-2">
                                       <div className="w-2 h-2 rounded-full bg-green-500"></div>
@@ -360,8 +360,8 @@ export default function TrainersPage() {
                                       <span>Expert</span>
                                     </div>
                                   </SelectItem>
-                                </SelectContent>
-                              </Select>
+                        </SelectContent>
+                      </Select>
                             </div>
                           )}
                         </div>
@@ -393,10 +393,10 @@ export default function TrainersPage() {
                 </div>
 
                 <div className="flex justify-end space-x-2">
-                  <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
+                  <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)} className="cursor-pointer">
                     {t('common.cancel')}
                   </Button>
-                  <Button type="submit">
+                  <Button type="submit" className="cursor-pointer">
                     {editingTrainer ? t('common.saveChanges') : t('common.add')}
                   </Button>
                 </div>
@@ -512,10 +512,10 @@ export default function TrainersPage() {
                         </div>
                       </div>
                       <div className="flex gap-1">
-                        <Button variant="ghost" size="sm" onClick={() => handleEdit(trainer)}>
+                        <Button variant="ghost" size="sm" onClick={() => handleEdit(trainer)} className="cursor-pointer">
                           <Edit className="h-4 w-4" />
                         </Button>
-                        <Button variant="ghost" size="sm" onClick={() => handleDelete(trainer.id)}>
+                        <Button variant="ghost" size="sm" onClick={() => handleDelete(trainer.id)} className="cursor-pointer">
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
@@ -621,6 +621,7 @@ export default function TrainersPage() {
                         variant="outline" 
                         size="sm"
                         onClick={() => copyToClipboard(createdTrainerCredentials.email)}
+                        className="cursor-pointer"
                       >
                         <Copy className="h-4 w-4" />
                       </Button>
@@ -640,6 +641,7 @@ export default function TrainersPage() {
                         variant="outline" 
                         size="sm"
                         onClick={() => setShowPassword(!showPassword)}
+                        className="cursor-pointer"
                       >
                         {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                       </Button>
@@ -647,6 +649,7 @@ export default function TrainersPage() {
                         variant="outline" 
                         size="sm"
                         onClick={() => copyToClipboard(createdTrainerCredentials.password)}
+                        className="cursor-pointer"
                       >
                         <Copy className="h-4 w-4" />
                       </Button>
@@ -672,11 +675,12 @@ export default function TrainersPage() {
                     const credentials = `Email: ${createdTrainerCredentials.email}\nPassword: ${createdTrainerCredentials.password}`
                     copyToClipboard(credentials)
                   }}
+                  className="cursor-pointer"
                 >
                   <Copy className="h-4 w-4 mr-2" />
                   Copy All
                 </Button>
-                <Button onClick={() => setCreatedTrainerCredentials(null)}>
+                <Button onClick={() => setCreatedTrainerCredentials(null)} className="cursor-pointer">
                   Got it!
                 </Button>
               </div>

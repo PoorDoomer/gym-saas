@@ -66,11 +66,11 @@ export default function CheckInsPage() {
               <p className="text-slate-600 dark:text-slate-400">Monitor member check-ins and gym occupancy</p>
             </div>
             <div className="flex items-center space-x-4">
-              <Button variant="outline">
+              <Button variant="outline" className="cursor-pointer">
                 <QrCode className="h-4 w-4 mr-2" />
                 QR Scanner
               </Button>
-              <Button>
+              <Button className="cursor-pointer">
                 <UserCheck className="h-4 w-4 mr-2" />
                 Manual Check-in
               </Button>
@@ -152,13 +152,13 @@ export default function CheckInsPage() {
                   className="pl-10"
                 />
               </div>
-              <Button className="w-full">
+              <Button className="w-full cursor-pointer">
                 <UserCheck className="h-4 w-4 mr-2" />
                 Check In Member
               </Button>
               <div className="text-center">
                 <p className="text-sm text-slate-600 dark:text-slate-400 mb-2">Or scan QR code</p>
-                <Button variant="outline" className="w-full">
+                <Button variant="outline" className="w-full cursor-pointer">
                   <QrCode className="h-4 w-4 mr-2" />
                   Open QR Scanner
                 </Button>

@@ -63,9 +63,15 @@ export async function getClassById(id: string): Promise<Class | null> {
 // Create new class
 export async function createClass(classData: CreateClassData): Promise<Class | null> {
   try {
+    // Clean the data to handle empty string UUIDs
+    const cleanedData = {
+      ...classData,
+      trainer_id: classData.trainer_id || undefined, // Convert empty string to undefined
+    }
+
     const { data, error } = await supabase
       .from('classes')
-      .insert([classData])
+      .insert([cleanedData])
       .select()
       .single()
 

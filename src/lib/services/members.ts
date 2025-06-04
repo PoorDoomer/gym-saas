@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/client'
 import { Member, MembershipPlan } from '@/lib/types'
+import { gymDataService } from './gymDataService'
 
 const supabase = createClient()
 
@@ -57,78 +58,70 @@ function generateTemporaryPassword(): string {
   return password
 }
 
-// Get all members with pagination and filters
+// Get all members with pagination and filters - now uses gymDataService
 export async function getMembers(filters: MembersFilters = {}): Promise<MembersResponse> {
-  const { 
-    search = '', 
-    membership_plan_id, 
-    is_active, 
-    page = 1, 
-    limit = 10 
-  } = filters
-
-  let query = supabase
-    .from('members')
-    .select(`
-      *,
-      membership_plan:membership_plans(*)
-    `, { count: 'exact' })
-
-  // Apply search filter
-  if (search) {
-    query = query.or(`first_name.ilike.%${search}%,last_name.ilike.%${search}%,email.ilike.%${search}%`)
-  }
-
-  // Apply membership plan filter
-  if (membership_plan_id) {
-    query = query.eq('membership_plan_id', membership_plan_id)
-  }
-
-  // Apply active status filter
-  if (is_active !== undefined) {
-    query = query.eq('is_active', is_active)
-  }
-
-  // Apply pagination
-  const from = (page - 1) * limit
-  const to = from + limit - 1
-  query = query.range(from, to)
-
-  // Order by created_at desc
-  query = query.order('created_at', { ascending: false })
-
-  const { data, error, count } = await query
-
-  if (error) {
-    console.error('Error fetching members:', error)
-    throw new Error('Failed to fetch members')
-  }
-
-  const totalPages = Math.ceil((count || 0) / limit)
-
-  return {
-    data: data || [],
-    count: count || 0,
-    page,
-    totalPages
+  try {
+    // For now, use gymDataService to get all members with gym isolation
+    const members = await gymDataService.getMembers()
+    
+    // Apply client-side filtering since gymDataService returns all members for the gym
+    let filteredMembers = members
+    
+    // Apply search filter
+    if (filters.search) {
+      const search = filters.search.toLowerCase()
+      filteredMembers = filteredMembers.filter(member => 
+        member.first_name.toLowerCase().includes(search) ||
+        member.last_name.toLowerCase().includes(search) ||
+        member.email.toLowerCase().includes(search)
+      )
+    }
+    
+    // Apply membership plan filter
+    if (filters.membership_plan_id) {
+      filteredMembers = filteredMembers.filter(member => 
+        member.membership_plan_id === filters.membership_plan_id
+      )
+    }
+    
+    // Apply active status filter
+    if (filters.is_active !== undefined) {
+      filteredMembers = filteredMembers.filter(member => 
+        member.is_active === filters.is_active
+      )
+    }
+    
+    // Apply pagination
+    const page = filters.page || 1
+    const limit = filters.limit || 10
+    const from = (page - 1) * limit
+    const to = from + limit
+    const paginatedMembers = filteredMembers.slice(from, to)
+    
+    const totalPages = Math.ceil(filteredMembers.length / limit)
+    
+    return {
+      data: paginatedMembers,
+      count: filteredMembers.length,
+      page,
+      totalPages
+    }
+  } catch (error) {
+    console.error('Failed to fetch members:', error)
+    return {
+      data: [],
+      count: 0,
+      page: 1,
+      totalPages: 0
+    }
   }
 }
 
 // Get member by ID
 export async function getMemberById(id: string): Promise<Member | null> {
   try {
-    const { data, error } = await supabase
-      .from('members')
-      .select('*')
-      .eq('id', id)
-      .single()
-
-    if (error) {
-      console.error('Error fetching member:', error)
-      throw error
-    }
-
-    return data
+    const members = await gymDataService.getMembers()
+    return members.find(m => m.id === id) || null
   } catch (error) {
     console.error('Failed to fetch member:', error)
     return null
@@ -173,30 +166,24 @@ export async function createMemberWithAccount(memberData: CreateMemberData): Pro
       }
     }
 
-    // Step 2: Create member record in database
-    const { data: member, error: memberError } = await supabase
-      .from('members')
-      .insert([{
-        user_id: authData.user.id, // Link to auth user
-        first_name: memberData.first_name,
-        last_name: memberData.last_name,
-        email: memberData.email,
-        phone: memberData.phone,
-        date_of_birth: memberData.date_of_birth,
-        emergency_contact_name: memberData.emergency_contact_name,
-        emergency_contact_phone: memberData.emergency_contact_phone,
-        membership_plan_id: memberData.membership_plan_id,
-        membership_start_date: memberData.membership_start_date,
-        membership_end_date: memberData.membership_end_date,
-        is_active: true,
-        notes: memberData.notes
-      }])
-      .select()
-      .single()
+    // Step 2: Create member record using gymDataService (includes gym_id)
+    const member = await gymDataService.createMember({
+      user_id: authData.user.id,
+      first_name: memberData.first_name,
+      last_name: memberData.last_name,
+      email: memberData.email,
+      phone: memberData.phone,
+      date_of_birth: memberData.date_of_birth,
+      emergency_contact_name: memberData.emergency_contact_name,
+      emergency_contact_phone: memberData.emergency_contact_phone,
+      membership_plan_id: memberData.membership_plan_id,
+      membership_start_date: memberData.membership_start_date,
+      membership_end_date: memberData.membership_end_date,
+      is_active: true,
+      notes: memberData.notes
+    })
 
-    if (memberError) {
-      console.error('Error creating member record:', memberError)
-      
+    if (!member || !member[0]) {
       // Cleanup: Delete the auth user if member creation failed
       await supabase.auth.admin.deleteUser(authData.user.id)
       
@@ -204,7 +191,7 @@ export async function createMemberWithAccount(memberData: CreateMemberData): Pro
         member: null,
         user_account: null,
         success: false,
-        error: `Failed to create member record: ${memberError.message}`
+        error: 'Failed to create member record'
       }
     }
 
@@ -226,7 +213,7 @@ export async function createMemberWithAccount(memberData: CreateMemberData): Pro
       .from('member_accounts')
       .insert([{
         user_id: authData.user.id,
-        member_id: member.id
+        member_id: member[0].id
       }])
 
     if (accountError) {
@@ -235,7 +222,7 @@ export async function createMemberWithAccount(memberData: CreateMemberData): Pro
     }
 
     return {
-      member,
+      member: member[0],
       user_account: {
         email: memberData.email,
         temporary_password: temporaryPassword,
@@ -257,31 +244,8 @@ export async function createMemberWithAccount(memberData: CreateMemberData): Pro
 // Create new member (legacy function for backward compatibility)
 export async function createMember(memberData: Partial<Member>): Promise<Member | null> {
   try {
-    const { data, error } = await supabase
-      .from('members')
-      .insert([{
-        first_name: memberData.first_name,
-        last_name: memberData.last_name,
-        email: memberData.email,
-        phone: memberData.phone,
-        date_of_birth: memberData.date_of_birth,
-        emergency_contact_name: memberData.emergency_contact_name,
-        emergency_contact_phone: memberData.emergency_contact_phone,
-        membership_plan_id: memberData.membership_plan_id,
-        membership_start_date: memberData.membership_start_date,
-        membership_end_date: memberData.membership_end_date,
-        is_active: memberData.is_active !== undefined ? memberData.is_active : true,
-        notes: memberData.notes
-      }])
-      .select()
-      .single()
-
-    if (error) {
-      console.error('Error creating member:', error)
-      throw error
-    }
-
-    return data
+    const result = await gymDataService.createMember(memberData)
+    return result && result[0] ? result[0] : null
   } catch (error) {
     console.error('Failed to create member:', error)
     return null
@@ -291,6 +255,16 @@ export async function createMember(memberData: Partial<Member>): Promise<Member 
 // Update member
 export async function updateMember(id: string, memberData: Partial<Member>): Promise<Member | null> {
   try {
+    // For now, use direct supabase call but add gym_id check
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) throw new Error('Not authenticated')
+    
+    // First verify the member belongs to the current gym
+    const existingMember = await getMemberById(id)
+    if (!existingMember) {
+      throw new Error('Member not found or does not belong to your gym')
+    }
+    
     const { data, error } = await supabase
       .from('members')
       .update({
@@ -327,6 +301,12 @@ export async function updateMember(id: string, memberData: Partial<Member>): Pro
 // Delete member (soft delete by setting is_active to false)
 export async function deleteMember(id: string): Promise<boolean> {
   try {
+    // First verify the member belongs to the current gym
+    const existingMember = await getMemberById(id)
+    if (!existingMember) {
+      throw new Error('Member not found or does not belong to your gym')
+    }
+    
     const { error } = await supabase
       .from('members')
       .update({ is_active: false })
@@ -344,62 +324,40 @@ export async function deleteMember(id: string): Promise<boolean> {
   }
 }
 
-// Get membership plans for dropdowns
+// Get membership plans for dropdowns - now uses gymDataService
 export async function getMembershipPlans(): Promise<MembershipPlan[]> {
-  const { data, error } = await supabase
-    .from('membership_plans')
-    .select('*')
-    .eq('is_active', true)
-    .order('price', { ascending: true })
-
-  if (error) {
-    console.error('Error fetching membership plans:', error)
-    throw new Error('Failed to fetch membership plans')
+  try {
+    const plans = await gymDataService.getMembershipPlans()
+    return plans.filter(p => p.is_active)
+  } catch (error) {
+    console.error('Failed to fetch membership plans:', error)
+    return []
   }
-
-  return data || []
 }
 
-// Get member statistics
+// Get member statistics - now properly filtered by gym
 export async function getMemberStats() {
   try {
-    // Get total members count
-    const { count: totalMembers, error: totalError } = await supabase
-      .from('members')
-      .select('*', { count: 'exact', head: true })
-
-    if (totalError) throw totalError
-
-    // Get active members count
-    const { count: activeMembers, error: activeError } = await supabase
-      .from('members')
-      .select('*', { count: 'exact', head: true })
-      .eq('is_active', true)
-
-    if (activeError) throw activeError
-
+    const analytics = await gymDataService.getGymAnalytics()
+    
     // Get new members this month
     const startOfMonth = new Date()
     startOfMonth.setDate(1)
     startOfMonth.setHours(0, 0, 0, 0)
-
-    const { count: newThisMonth, error: newError } = await supabase
-      .from('members')
-      .select('*', { count: 'exact', head: true })
-      .gte('created_at', startOfMonth.toISOString())
-
-    if (newError) throw newError
-
+    
+    const newThisMonth = analytics.members.filter(m => 
+      new Date(m.created_at) >= startOfMonth
+    ).length
+    
     // Calculate revenue from active memberships
-    // This is a simplified calculation - in real app, you'd have pricing data
-    const basePrice = 50 // Base monthly membership price
-    const estimatedRevenue = (activeMembers || 0) * basePrice
-
+    // Use the actual revenue data from analytics
+    const revenue = analytics.totalRevenue
+    
     return {
-      totalMembers: totalMembers || 0,
-      activeMembers: activeMembers || 0,
-      newThisMonth: newThisMonth || 0,
-      revenue: estimatedRevenue
+      totalMembers: analytics.totalMembers,
+      activeMembers: analytics.activeMembers,
+      newThisMonth,
+      revenue
     }
   } catch (error) {
     console.error('Failed to fetch member stats:', error)

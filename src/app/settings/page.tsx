@@ -10,22 +10,28 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Separator } from '@/components/ui/separator'
 import { Save, Building, Phone, Mail, Globe, Clock, DollarSign, Percent } from 'lucide-react'
 import { GymSettings } from '@/lib/types'
+import { useGym } from '@/lib/contexts/GymContext'
+import { createClient } from '@/lib/supabase/client'
+
+const supabase = createClient()
 
 export default function SettingsPage() {
+  const { currentGym } = useGym()
   const [settings, setSettings] = useState<GymSettings | null>(null)
   const [loading, setLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
 
-  // Mock data for demonstration
   useEffect(() => {
-    const mockSettings: GymSettings = {
-      id: 'gym_settings_id',
-      gym_name: 'FitLife Gym',
-      logo_url: undefined,
-      address: '123 Fitness Ave, Suite 100, Sportsville, CA 90210',
-      phone: '+1 (123) 456-7890',
-      email: 'info@fitlife.com',
-      website: 'https://www.fitlife.com',
+    if (currentGym) {
+      // Use actual gym data with default values for missing fields
+      const gymSettings: GymSettings = {
+        id: currentGym.id,
+        gym_name: currentGym.name,
+        logo_url: currentGym.logo_url || undefined,
+        address: currentGym.address || '',
+        phone: currentGym.phone || '',
+        email: currentGym.email || '',
+        website: currentGym.website || '',
       business_hours: {
         monday: '6:00 AM - 10:00 PM',
         tuesday: '6:00 AM - 10:00 PM',
@@ -35,40 +41,59 @@ export default function SettingsPage() {
         saturday: '8:00 AM - 6:00 PM',
         sunday: '8:00 AM - 4:00 PM',
       },
-      timezone: 'America/Los_Angeles',
-      currency: 'USD',
-      tax_rate: 8.5,
-      created_at: '2024-01-01T00:00:00Z',
-      updated_at: '2024-01-01T00:00:00Z',
-    }
-
-    setTimeout(() => {
-      setSettings(mockSettings)
+        timezone: currentGym.timezone || 'America/Los_Angeles',
+        currency: 'USD', // Default value
+        tax_rate: 8.5, // Default value
+        created_at: new Date().toISOString(), // Default value
+        updated_at: new Date().toISOString(), // Default value
+      }
+      setSettings(gymSettings)
       setLoading(false)
-    }, 1000)
-  }, [])
+    }
+  }, [currentGym])
 
   const handleSave = async (formData: FormData) => {
+    if (!currentGym) return
+
     setIsSaving(true)
-    // Mock save operation
-    console.log('Saving settings:', Object.fromEntries(formData))
-    await new Promise(resolve => setTimeout(resolve, 1500))
+    try {
+      // Convert FormData to object
+      const formObject = Object.fromEntries(formData)
+      
+      // Update gym in database - only update fields that exist in the gyms table
+      const { error } = await supabase
+        .from('gyms')
+        .update({
+          name: formObject.gym_name,
+          logo_url: formObject.logo_url || null,
+          address: formObject.address || null,
+          phone: formObject.phone || null,
+          email: formObject.email || null,
+          website: formObject.website || null,
+          timezone: formObject.timezone,
+        })
+        .eq('id', currentGym.id)
+      
+      if (error) {
+        console.error('Error updating gym settings:', error)
+        alert('Failed to save settings. Please try again.')
+      } else {
+        alert('Settings saved successfully!')
+        // Refresh the gym data
+        window.location.reload()
+      }
+    } catch (error) {
+      console.error('Error saving settings:', error)
+      alert('Failed to save settings. Please try again.')
+    } finally {
     setIsSaving(false)
-    alert('Settings saved successfully!')
+    }
   }
 
-  if (loading) {
+  if (loading || !settings) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-gray-900"></div>
-      </div>
-    )
-  }
-
-  if (!settings) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <p className="text-muted-foreground">No settings found. Please contact support.</p>
+        <p className="text-muted-foreground">Loading settings...</p>
       </div>
     )
   }
@@ -82,7 +107,7 @@ export default function SettingsPage() {
             Manage your gym's general information, contact details, and preferences.
           </p>
         </div>
-        <Button type="submit" form="settings-form" disabled={isSaving}>
+        <Button type="submit" form="settings-form" disabled={isSaving} className="cursor-pointer">
           <Save className="mr-2 h-4 w-4" />
           {isSaving ? 'Saving...' : 'Save Changes'}
         </Button>
@@ -203,7 +228,8 @@ export default function SettingsPage() {
                   <SelectItem value="America/New_York">America/New_York</SelectItem>
                   <SelectItem value="Europe/London">Europe/London</SelectItem>
                   <SelectItem value="Asia/Tokyo">Asia/Tokyo</SelectItem>
-                  {/* Add more timezones as needed */}
+                  <SelectItem value="Europe/Paris">Europe/Paris</SelectItem>
+                  <SelectItem value="Australia/Sydney">Australia/Sydney</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -217,7 +243,8 @@ export default function SettingsPage() {
                   <SelectItem value="USD">USD - United States Dollar</SelectItem>
                   <SelectItem value="EUR">EUR - Euro</SelectItem>
                   <SelectItem value="GBP">GBP - British Pound</SelectItem>
-                  {/* Add more currencies as needed */}
+                  <SelectItem value="CAD">CAD - Canadian Dollar</SelectItem>
+                  <SelectItem value="AUD">AUD - Australian Dollar</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -229,6 +256,7 @@ export default function SettingsPage() {
                 type="number"
                 step="0.01"
                 defaultValue={settings.tax_rate}
+                placeholder="e.g., 8.5"
               />
             </div>
           </CardContent>

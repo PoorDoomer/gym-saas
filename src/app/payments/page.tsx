@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Plus, Search, DollarSign, CreditCard, TrendingUp, AlertCircle, Download, Eye, Loader2 } from 'lucide-react'
@@ -120,13 +120,13 @@ export default function PaymentsPage() {
           </p>
         </div>
         <div className="flex items-center space-x-2">
-          <Button variant="outline">
+          <Button variant="outline" className="cursor-pointer">
             <Download className="mr-2 h-4 w-4" />
             Export
           </Button>
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
-              <Button>
+              <Button className="cursor-pointer">
                 <Plus className="mr-2 h-4 w-4" />
                 Record Payment
               </Button>
@@ -192,10 +192,10 @@ export default function PaymentsPage() {
                 </div>
 
                 <div className="flex justify-end space-x-2">
-                  <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
+                  <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)} className="cursor-pointer">
                     Cancel
                   </Button>
-                  <Button type="submit">
+                  <Button type="submit" className="cursor-pointer">
                     Record Payment
                   </Button>
                 </div>
@@ -311,7 +311,7 @@ export default function PaymentsPage() {
                         <p className="font-semibold">${payment.amount.toFixed(2)}</p>
                         <p className="text-xs text-muted-foreground">{payment.currency}</p>
                       </div>
-                      <Button variant="outline" size="sm">
+                      <Button variant="outline" size="sm" className="cursor-pointer">
                         <Eye className="h-4 w-4" />
                       </Button>
                     </div>
@@ -360,7 +360,7 @@ export default function PaymentsPage() {
                         <p className="font-semibold">${subscription.amount.toFixed(2)}</p>
                         <p className="text-xs text-muted-foreground">per {subscription.plan?.duration_months === 1 ? 'month' : 'year'}</p>
                       </div>
-                      <Button variant="outline" size="sm">
+                      <Button variant="outline" size="sm" className="cursor-pointer">
                         <Eye className="h-4 w-4" />
                       </Button>
                     </div>

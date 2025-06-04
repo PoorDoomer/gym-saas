@@ -59,7 +59,7 @@ export default function DashboardPage() {
     }
   }, [currentGym, gymLoading])
 
-  async function fetchDashboardData() {
+    async function fetchDashboardData() {
     if (!currentGym) {
       setError('No gym selected')
       return
@@ -72,9 +72,12 @@ export default function DashboardPage() {
       // Get gym-isolated analytics
       const analytics = await gymDataService.getGymAnalytics()
       
+      // Get full members data for recent activity
+      const members = await gymDataService.getMembers()
+      
       // Calculate monthly revenue from current month
-      const currentMonth = new Date().getMonth() + 1
-      const currentYear = new Date().getFullYear()
+          const currentMonth = new Date().getMonth() + 1
+          const currentYear = new Date().getFullYear()
       const monthlyRevenue = analytics.revenue?.filter(r => {
         const paymentDate = new Date(r.created_at)
         return paymentDate.getMonth() + 1 === currentMonth && 
@@ -87,10 +90,10 @@ export default function DashboardPage() {
       const classesToday = 0 // TODO: Implement today's classes from analytics
       const checkinsToday = 0 // TODO: Implement today's checkins from analytics
 
-      setStats({
+          setStats({
         active_members: analytics.activeMembers,
         total_members: analytics.totalMembers,
-        monthly_revenue: monthlyRevenue.toString(),
+            monthly_revenue: monthlyRevenue.toString(),
         classes_today: classesToday,
         checkins_today: checkinsToday,
         total_trainers: analytics.totalTrainers,
@@ -99,14 +102,18 @@ export default function DashboardPage() {
         active_classes: analytics.activeClasses
       })
 
-      // Create sample recent activity from gym data
+      // Create recent activity from actual member data
       const recentActivities: RecentActivity[] = []
       
-      // Add recent member registrations
-      analytics.members?.slice(-3).forEach(member => {
+      // Add recent member registrations (last 3 members)
+      const recentMembers = members
+        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+        .slice(0, 3)
+      
+      recentMembers.forEach(member => {
         recentActivities.push({
           activity_type: 'registration',
-          member_name: `Member ID: ${member.id}`,
+          member_name: `${member.first_name} ${member.last_name}`,
           created_at: member.created_at,
           description: 'joined the gym'
         })
@@ -114,12 +121,12 @@ export default function DashboardPage() {
 
       setRecentActivity(recentActivities)
 
-    } catch (error) {
+      } catch (error) {
       setError('Failed to load dashboard data')
-    } finally {
-      setLoading(false)
+      } finally {
+        setLoading(false)
+      }
     }
-  }
 
   const formatTimeAgo = (dateString: string) => {
     const date = new Date(dateString)
@@ -281,27 +288,27 @@ export default function DashboardPage() {
                   <span>Loading activity...</span>
                 </div>
               ) : (
-                <div className="space-y-4">
-                  {recentActivity.length > 0 ? (
-                    recentActivity.map((activity, index) => (
-                      <div key={index} className="flex items-center space-x-3">
-                        <div className={`w-2 h-2 rounded-full ${getActivityColor(activity.activity_type)}`} />
-                        <div className="flex-1">
-                          <p className="text-sm font-medium">
-                            {activity.member_name} {activity.description}
-                          </p>
-                          <p className="text-xs text-slate-500">{formatTimeAgo(activity.created_at)}</p>
-                        </div>
-                      </div>
-                    ))
-                  ) : (
-                    <div className="text-center py-8">
-                      <Activity className="h-8 w-8 text-slate-400 mx-auto mb-2" />
-                      <p className="text-slate-500">No recent activity</p>
-                      <p className="text-xs text-slate-400">Activity will appear here as members interact with your gym</p>
-                    </div>
-                  )}
+              <div className="space-y-4">
+                {recentActivity.length > 0 ? (
+                  recentActivity.map((activity, index) => (
+                    <div key={index} className="flex items-center space-x-3">
+                      <div className={`w-2 h-2 rounded-full ${getActivityColor(activity.activity_type)}`} />
+                  <div className="flex-1">
+                        <p className="text-sm font-medium">
+                          {activity.member_name} {activity.description}
+                        </p>
+                        <p className="text-xs text-slate-500">{formatTimeAgo(activity.created_at)}</p>
+                  </div>
                 </div>
+                  ))
+                ) : (
+                  <div className="text-center py-8">
+                    <Activity className="h-8 w-8 text-slate-400 mx-auto mb-2" />
+                    <p className="text-slate-500">No recent activity</p>
+                    <p className="text-xs text-slate-400">Activity will appear here as members interact with your gym</p>
+                  </div>
+                )}
+              </div>
               )}
             </CardContent>
           </Card>
@@ -315,7 +322,7 @@ export default function DashboardPage() {
             <CardContent>
               <div className="space-y-3">
                 <Button variant="outline" className="w-full justify-start cursor-pointer">
-                  <Plus className="h-4 w-4 mr-2" />
+                      <Plus className="h-4 w-4 mr-2" />
                   Add New Member
                 </Button>
                 <Button variant="outline" className="w-full justify-start cursor-pointer">
@@ -329,7 +336,7 @@ export default function DashboardPage() {
                 <Button variant="outline" className="w-full justify-start cursor-pointer">
                   <Users className="h-4 w-4 mr-2" />
                   Check-in Member
-                </Button>
+                    </Button>
               </div>
             </CardContent>
           </Card>

@@ -112,7 +112,7 @@ export default function ReportsPage() {
               <SelectItem value="365">Last year</SelectItem>
             </SelectContent>
           </Select>
-          <Button variant="outline">
+          <Button variant="outline" className="cursor-pointer">
             <Download className="mr-2 h-4 w-4" />
             Export Report
           </Button>

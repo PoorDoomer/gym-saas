@@ -19,7 +19,7 @@ import {
   Loader2
 } from "lucide-react"
 import { useTranslation } from "@/lib/i18n"
-import { getTodaysClassSchedules, getUpcomingClassSchedules, getClassStats, createClass, updateClass, deleteClass, updateClassSchedule, createClassSchedule } from "@/lib/services/classes"
+import { getTodaysClassSchedules, getUpcomingClassSchedules, getClassStats, createClass, updateClass, deleteClass, updateClassSchedule, createClassSchedule, getClasses, CreateClassData, CreateClassScheduleData } from "@/lib/services/classes"
 import { ClassSchedule, Class } from "@/lib/types"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
@@ -103,15 +103,29 @@ export default function ClassesPage() {
 
   const handleClassSubmit = async () => {
     try {
+      const classData: CreateClassData = {
+        name: classFormData.name,
+        description: classFormData.description,
+        trainer_id: classFormData.trainer_id || undefined, // Convert empty string to undefined
+        capacity: classFormData.capacity,
+        duration_minutes: classFormData.duration_minutes,
+        location: classFormData.location
+      }
+
       if (editingClass) {
-        await updateClass(editingClass.id, classFormData)
+        await updateClass(editingClass.id, classData)
       } else {
-        await createClass(classFormData)
+        const result = await createClass(classData)
+        if (!result) {
+          alert('Failed to create class')
+          return
+        }
       }
       await loadData() // Refresh data
       handleCloseClassDialog()
     } catch (error) {
       console.error('Failed to save class:', error)
+      alert('Failed to save class')
     }
   }
 
@@ -204,13 +218,13 @@ export default function ClassesPage() {
               <p className="text-slate-600 dark:text-slate-400">{t('classes.subtitle')}</p>
             </div>
             <div className="flex items-center space-x-4">
-              <Button variant="outline">
+              <Button variant="outline" className="cursor-pointer">
                 <Calendar className="h-4 w-4 mr-2" />
                 {t('classes.calendarView')}
               </Button>
               <Dialog open={isClassDialogOpen} onOpenChange={setIsClassDialogOpen}>
                 <DialogTrigger asChild>
-                  <Button onClick={() => setEditingClass(null)}>
+                  <Button onClick={() => setEditingClass(null)} className="cursor-pointer">
                     <Plus className="h-4 w-4 mr-2" />
                     {t('classes.addClass')}
                   </Button>
@@ -275,10 +289,10 @@ export default function ClassesPage() {
                     {/* Add Trainer selection here, fetch from trainers table */}
                   </div>
                   <DialogFooter>
-                    <Button variant="outline" onClick={handleCloseClassDialog}>
+                    <Button variant="outline" onClick={handleCloseClassDialog} className="cursor-pointer">
                       {t('common.cancel')}
                     </Button>
-                    <Button onClick={handleClassSubmit}>
+                    <Button onClick={handleClassSubmit} className="cursor-pointer">
                       {editingClass ? t('common.saveChanges') : t('common.add')}
                     </Button>
                   </DialogFooter>
@@ -286,8 +300,8 @@ export default function ClassesPage() {
               </Dialog>
               <Dialog open={isScheduleDialogOpen} onOpenChange={setIsScheduleDialogOpen}>
                 <DialogTrigger asChild>
-                  <Button onClick={() => setEditingSchedule(null)}>
-                <CalendarPlus className="h-4 w-4 mr-2" />
+                  <Button onClick={() => setEditingSchedule(null)} className="cursor-pointer">
+                    <CalendarPlus className="h-4 w-4 mr-2" />
                     {t('classes.scheduleClass')}
                   </Button>
                 </DialogTrigger>
@@ -347,12 +361,12 @@ export default function ClassesPage() {
                     {/* Add Trainer selection here, fetch from trainers table */}
                   </div>
                   <DialogFooter>
-                    <Button variant="outline" onClick={handleCloseScheduleDialog}>
+                    <Button variant="outline" onClick={handleCloseScheduleDialog} className="cursor-pointer">
                       {t('common.cancel')}
                     </Button>
-                    <Button onClick={handleScheduleSubmit}>
+                    <Button onClick={handleScheduleSubmit} className="cursor-pointer">
                       {editingSchedule ? t('common.saveChanges') : t('common.schedule')}
-              </Button>
+                    </Button>
                   </DialogFooter>
                 </DialogContent>
               </Dialog>
@@ -436,7 +450,7 @@ export default function ClassesPage() {
                       onChange={(e) => setSearchTerm(e.target.value)}
                     />
                   </div>
-                  <Button variant="outline" size="sm">
+                  <Button variant="outline" size="sm" className="cursor-pointer">
                     <Filter className="h-4 w-4 mr-2" />
                     {t('common.filter')}
                   </Button>
@@ -486,13 +500,13 @@ export default function ClassesPage() {
                         </div>
                       </div>
                       <div className="flex items-center space-x-2 ml-4">
-                        <Button variant="ghost" size="sm">
+                        <Button variant="ghost" size="sm" className="cursor-pointer">
                           <Eye className="h-4 w-4" />
                         </Button>
-                          <Button variant="ghost" size="sm" onClick={() => handleEditClass(schedule.class as Class)}>
+                          <Button variant="ghost" size="sm" onClick={() => handleEditClass(schedule.class as Class)} className="cursor-pointer">
                           <Edit className="h-4 w-4" />
                         </Button>
-                          <Button variant="ghost" size="sm" onClick={() => handleDeleteClass(schedule.class?.id as string)}>
+                          <Button variant="ghost" size="sm" onClick={() => handleDeleteClass(schedule.class?.id as string)} className="cursor-pointer">
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>

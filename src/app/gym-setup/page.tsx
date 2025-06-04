@@ -152,81 +152,81 @@ export default function GymSetupPage() {
             {error && (
               <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md">
                 {error}
-              </div>
+          </div>
             )}
 
             <div className="space-y-4">
-              <div>
+          <div>
                 <Label htmlFor="name" className="text-sm font-medium">Gym Name *</Label>
-                <Input
-                  id="name"
-                  value={gymData.name}
-                  onChange={(e) => handleInputChange('name', e.target.value)}
-                  placeholder="e.g., FitLife Gym Downtown"
+                  <Input
+                    id="name"
+                    value={gymData.name}
+                    onChange={(e) => handleInputChange('name', e.target.value)}
+                    placeholder="e.g., FitLife Gym Downtown"
                   className="mt-1"
-                />
-              </div>
+                  />
+                </div>
 
-              <div>
+                <div>
                 <Label htmlFor="slug" className="text-sm font-medium">URL Slug</Label>
-                <Input
-                  id="slug"
-                  value={gymData.slug}
-                  onChange={(e) => handleInputChange('slug', e.target.value)}
-                  placeholder="fitlife-downtown"
+                  <Input
+                    id="slug"
+                    value={gymData.slug}
+                    onChange={(e) => handleInputChange('slug', e.target.value)}
+                    placeholder="fitlife-downtown"
                   className="font-mono text-sm mt-1"
-                />
-                <p className="text-xs text-gray-500 mt-1">
-                  This will be used in your gym's URL
-                </p>
-              </div>
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    This will be used in your gym's URL
+                  </p>
+                </div>
 
-              <div>
+                <div>
                 <Label htmlFor="address" className="text-sm font-medium">Address</Label>
-                <Textarea
-                  id="address"
-                  value={gymData.address}
-                  onChange={(e) => handleInputChange('address', e.target.value)}
-                  placeholder="123 Fitness Street, Healthy City, HC 12345"
-                  rows={2}
+                  <Textarea
+                    id="address"
+                    value={gymData.address}
+                    onChange={(e) => handleInputChange('address', e.target.value)}
+                    placeholder="123 Fitness Street, Healthy City, HC 12345"
+                    rows={2}
                   className="mt-1"
-                />
-              </div>
+                  />
+                </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
+                  <div>
                   <Label htmlFor="phone" className="text-sm font-medium">Phone</Label>
-                  <Input
-                    id="phone"
-                    value={gymData.phone}
-                    onChange={(e) => handleInputChange('phone', e.target.value)}
-                    placeholder="+1 (555) 123-4567"
+                    <Input
+                      id="phone"
+                      value={gymData.phone}
+                      onChange={(e) => handleInputChange('phone', e.target.value)}
+                      placeholder="+1 (555) 123-4567"
                     className="mt-1"
-                  />
-                </div>
-                <div>
+                    />
+                  </div>
+                  <div>
                   <Label htmlFor="email" className="text-sm font-medium">Email</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={gymData.email}
-                    onChange={(e) => handleInputChange('email', e.target.value)}
-                    placeholder="info@fitlifegym.com"
+                    <Input
+                      id="email"
+                      type="email"
+                      value={gymData.email}
+                      onChange={(e) => handleInputChange('email', e.target.value)}
+                      placeholder="info@fitlifegym.com"
                     className="mt-1"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                <Label htmlFor="website" className="text-sm font-medium">Website (optional)</Label>
+                  <Input
+                    id="website"
+                    value={gymData.website}
+                    onChange={(e) => handleInputChange('website', e.target.value)}
+                    placeholder="https://www.fitlifegym.com"
+                  className="mt-1"
                   />
                 </div>
-              </div>
-
-              <div>
-                <Label htmlFor="website" className="text-sm font-medium">Website (optional)</Label>
-                <Input
-                  id="website"
-                  value={gymData.website}
-                  onChange={(e) => handleInputChange('website', e.target.value)}
-                  placeholder="https://www.fitlifegym.com"
-                  className="mt-1"
-                />
-              </div>
 
               <div>
                 <Label htmlFor="description" className="text-sm font-medium">Description (optional)</Label>
@@ -250,20 +250,20 @@ export default function GymSetupPage() {
               >
                 Cancel
               </Button>
-              <Button 
-                onClick={createGym}
-                disabled={loading || !gymData.name.trim()}
+                <Button 
+                  onClick={createGym}
+                  disabled={loading || !gymData.name.trim()}
                 className="flex-1 bg-blue-600 hover:bg-blue-700 cursor-pointer"
-              >
+                >
                 {loading ? 'Creating Gym...' : 'Create Gym'}
-              </Button>
+                </Button>
             </div>
 
-            <p className="text-xs text-gray-500 text-center">
+                <p className="text-xs text-gray-500 text-center">
               Your gym will be created under your current subscription plan
-            </p>
-          </CardContent>
-        </Card>
+                </p>
+              </CardContent>
+            </Card>
       </div>
     </div>
   )

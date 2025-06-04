@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/client'
 import { Trainer } from '@/lib/types'
 import { Sport, TrainerSport } from './sports'
+import { gymDataService } from './gymDataService'
 
 const supabase = createClient()
 
@@ -62,28 +63,11 @@ function generateTemporaryPassword(): string {
   return password
 }
 
-// Get all trainers with their sports
+// Get all trainers with their sports - now uses gymDataService
 export async function getTrainers(): Promise<TrainerWithSports[]> {
   try {
-    const { data, error } = await supabase
-      .from('trainers')
-      .select(`
-        *,
-        trainer_sports(
-          id,
-          sport_id,
-          skill_level,
-          sport:sports(*)
-        )
-      `)
-      .order('created_at', { ascending: false })
-
-    if (error) {
-      console.error('Error fetching trainers:', error)
-      throw new Error('Failed to fetch trainers')
-    }
-
-    return data || []
+    const trainers = await gymDataService.getTrainers()
+    return trainers as TrainerWithSports[]
   } catch (error) {
     console.error('Failed to fetch trainers:', error)
     return []
@@ -93,26 +77,8 @@ export async function getTrainers(): Promise<TrainerWithSports[]> {
 // Get trainer by ID with sports
 export async function getTrainerById(id: string): Promise<TrainerWithSports | null> {
   try {
-    const { data, error } = await supabase
-      .from('trainers')
-      .select(`
-        *,
-        trainer_sports(
-          id,
-          sport_id,
-          skill_level,
-          sport:sports(*)
-        )
-      `)
-      .eq('id', id)
-      .single()
-
-    if (error) {
-      console.error('Error fetching trainer:', error)
-      throw error
-    }
-
-    return data
+    const trainers = await getTrainers()
+    return trainers.find(t => t.id === id) || null
   } catch (error) {
     console.error('Failed to fetch trainer:', error)
     return null
@@ -157,11 +123,9 @@ export async function createTrainer(trainerData: CreateTrainerData): Promise<Cre
       }
     }
 
-    // Step 2: Create trainer record in database
-    const { data: trainer, error: trainerError } = await supabase
-      .from('trainers')
-      .insert([{
-        user_id: authData.user.id, // Link to auth user
+    // Step 2: Create trainer record using gymDataService (includes gym_id)
+    const trainer = await gymDataService.createTrainer({
+      user_id: authData.user.id,
         first_name: trainerData.first_name,
         last_name: trainerData.last_name,
         email: trainerData.email,
@@ -171,13 +135,9 @@ export async function createTrainer(trainerData: CreateTrainerData): Promise<Cre
         hourly_rate: trainerData.hourly_rate,
         profile_image_url: trainerData.profile_image_url,
         is_active: true
-      }])
-      .select()
-      .single()
+    })
 
-    if (trainerError) {
-      console.error('Error creating trainer record:', trainerError)
-      
+    if (!trainer || !trainer[0]) {
       // Cleanup: Delete the auth user if trainer creation failed
       await supabase.auth.admin.deleteUser(authData.user.id)
       
@@ -185,7 +145,7 @@ export async function createTrainer(trainerData: CreateTrainerData): Promise<Cre
         trainer: null,
         user_account: null,
         success: false,
-        error: `Failed to create trainer record: ${trainerError.message}`
+        error: 'Failed to create trainer record'
       }
     }
 
@@ -207,7 +167,7 @@ export async function createTrainer(trainerData: CreateTrainerData): Promise<Cre
       .from('trainer_accounts')
       .insert([{
         user_id: authData.user.id,
-        trainer_id: trainer.id
+        trainer_id: trainer[0].id
       }])
 
     if (accountError) {
@@ -218,7 +178,7 @@ export async function createTrainer(trainerData: CreateTrainerData): Promise<Cre
     // Step 5: Assign sports if any
     if (trainerData.selected_sports && trainerData.selected_sports.length > 0) {
       const sportsData = trainerData.selected_sports.map(sport => ({
-        trainer_id: trainer.id,
+        trainer_id: trainer[0].id,
         sport_id: sport.sport_id,
         skill_level: sport.skill_level
       }))
@@ -234,7 +194,7 @@ export async function createTrainer(trainerData: CreateTrainerData): Promise<Cre
     }
 
     return {
-      trainer,
+      trainer: trainer[0],
       user_account: {
         email: trainerData.email,
         temporary_password: temporaryPassword,
@@ -256,6 +216,12 @@ export async function createTrainer(trainerData: CreateTrainerData): Promise<Cre
 // Update trainer with sports
 export async function updateTrainer(id: string, trainerData: UpdateTrainerData): Promise<Trainer | null> {
   try {
+    // First verify the trainer belongs to the current gym
+    const existingTrainer = await getTrainerById(id)
+    if (!existingTrainer) {
+      throw new Error('Trainer not found or does not belong to your gym')
+    }
+    
     // Update trainer details
     const { data: trainer, error: trainerError } = await supabase
       .from('trainers')
@@ -316,6 +282,12 @@ export async function updateTrainer(id: string, trainerData: UpdateTrainerData):
 // Delete trainer (soft delete by setting is_active to false)
 export async function deleteTrainer(id: string): Promise<boolean> {
   try {
+    // First verify the trainer belongs to the current gym
+    const existingTrainer = await getTrainerById(id)
+    if (!existingTrainer) {
+      throw new Error('Trainer not found or does not belong to your gym')
+    }
+    
     const { error } = await supabase
       .from('trainers')
       .update({ is_active: false })
@@ -333,37 +305,26 @@ export async function deleteTrainer(id: string): Promise<boolean> {
   }
 }
 
-// Get trainer statistics with sports data
+// Get trainer statistics with sports data - now properly filtered by gym
 export async function getTrainerStats(): Promise<TrainerStats> {
   try {
-    const { data: trainers, error } = await supabase
-      .from('trainers')
-      .select(`
-        *,
-        trainer_sports(
-          sport:sports(name)
-        )
-      `)
+    const analytics = await gymDataService.getGymAnalytics()
+    const trainers = await getTrainers()
 
-    if (error) {
-      console.error('Error fetching trainer stats:', error)
-      throw error
-    }
-
-    const totalTrainers = trainers?.length || 0
-    const activeTrainers = trainers?.filter(t => t.is_active).length || 0
+    const totalTrainers = analytics.totalTrainers
+    const activeTrainers = analytics.activeTrainers
     const avgHourlyRate = totalTrainers > 0 
       ? trainers.reduce((sum, t) => sum + (t.hourly_rate || 0), 0) / totalTrainers 
       : 0
 
     // Get all unique specializations
-    const allSpecializations = trainers?.flatMap(t => t.specializations || []) || []
+    const allSpecializations = trainers.flatMap(t => t.specializations || [])
     const uniqueSpecializations = [...new Set(allSpecializations)]
 
     // Get most common sports
-    const allSports = trainers?.flatMap((t: any) => 
+    const allSports = trainers.flatMap((t: any) => 
       (t.trainer_sports || []).map((ts: any) => ts.sport?.name).filter(Boolean)
-    ) || []
+    )
     const sportCounts = allSports.reduce((acc: Record<string, number>, sport: string) => {
       acc[sport] = (acc[sport] || 0) + 1
       return acc
