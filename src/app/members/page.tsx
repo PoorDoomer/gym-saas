@@ -55,7 +55,6 @@ export default function MembersPage() {
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [isDialogOpen, setIsDialogOpen] = useState(false)
-  const [page, setPage] = useState(1)
   const [editingMember, setEditingMember] = useState<Member | null>(null)
   const [qrDialogOpen, setQrDialogOpen] = useState(false)
   const [selectedMemberForQr, setSelectedMemberForQr] = useState<Member | null>(null)
@@ -79,14 +78,14 @@ export default function MembersPage() {
 
   // Fetch data on component mount
   useEffect(() => {
-    loadData(page)
-  }, [page])
+    loadData()
+  }, [])
 
-  const loadData = async (pageNum = page) => {
+  const loadData = async () => {
     setLoading(true)
     try {
       const [membersResponse, statsData, plansData] = await Promise.all([
-        getMembers({ page: pageNum, limit: 10 }),
+        getMembers({ limit: 1000 }), // Get all members by setting a high limit
         getMemberStats(),
         getMembershipPlans()
       ])
@@ -534,21 +533,17 @@ export default function MembersPage() {
             ))}
           </div>
 
-        {filteredMembers.length === 0 && (
-          <div className="text-center py-8">
-            <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-lg font-medium mb-2">{t('members.noMembersFound')}</h3>
-            <p className="text-muted-foreground">
-              {searchTerm ? 'Try adjusting your search criteria' : 'Add your first member to get started'}
-            </p>
-          </div>
-        )}
-        <div className="flex justify-between mt-4">
-          <Button variant="outline" disabled={page === 1} onClick={() => setPage(p => Math.max(1, p - 1))}>Prev</Button>
-          <Button variant="outline" onClick={() => setPage(p => p + 1)}>Next</Button>
-        </div>
-      </CardContent>
-    </Card>
-  </div>
-)
+          {filteredMembers.length === 0 && (
+            <div className="text-center py-8">
+              <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-lg font-medium mb-2">{t('members.noMembersFound')}</h3>
+              <p className="text-muted-foreground">
+                {searchTerm ? 'Try adjusting your search criteria' : 'Add your first member to get started'}
+              </p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  )
 }

@@ -35,8 +35,23 @@ export async function login(formData: FormData) {
   console.log('Login successful for:', data.email)
   console.log('User data:', authData.user?.email)
 
+  // Check if user has any gyms
+  const { data: userGyms, error: gymsError } = await supabase
+    .from('gyms')
+    .select('id')
+    .eq('owner_user_id', authData.user!.id)
+    .eq('is_active', true)
+
+  if (gymsError) {
+    console.error('Error checking user gyms:', gymsError)
+    // Fallback to gym management if we can't check
+    revalidatePath('/', 'layout')
+    redirect('/gym-management')
+  }
+
+  // Always redirect to gym management page - it will handle the flow
   revalidatePath('/', 'layout')
-  redirect('/dashboard')
+  redirect('/gym-management')
 }
 
 export async function signup(formData: FormData) {
@@ -92,6 +107,7 @@ export async function signup(formData: FormData) {
   console.log('User data:', authData.user?.email)
   console.log('Confirmation required:', !authData.user?.email_confirmed_at)
 
+  // Redirect new users to gym management page
   revalidatePath('/', 'layout')
-  redirect('/dashboard')
+  redirect('/gym-management')
 } 

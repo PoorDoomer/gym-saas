@@ -125,39 +125,57 @@ export async function deleteClass(id: string): Promise<boolean> {
 
 // Get today's class schedules
 export async function getTodaysClassSchedules(): Promise<ClassSchedule[]> {
-  const today = new Date().toISOString().split('T')[0] // YYYY-MM-DD
-  const { data, error } = await supabase
-    .from('class_schedules')
-    .select('*, class:classes(*, trainer:trainers(first_name, last_name)), trainer:trainers(first_name, last_name)')
-    .eq('date', today)
-    .order('scheduled_time', { ascending: true })
+  try {
+    const today = new Date().toISOString().split('T')[0] // YYYY-MM-DD
+    const { data, error } = await supabase
+      .from('class_schedules')
+      .select(`
+        *,
+        class:classes(*),
+        trainer:trainers(first_name, last_name)
+      `)
+      .eq('date', today)
+      .order('scheduled_time', { ascending: true })
 
-  if (error) {
-    console.error('Error fetching today\'s class schedules:', error)
-    throw new Error('Failed to fetch today\'s class schedules')
+    if (error) {
+      console.error('Error fetching today\'s class schedules:', error)
+      return []
+    }
+
+    return data || []
+  } catch (error) {
+    console.error('Failed to fetch today\'s class schedules:', error)
+    return []
   }
-
-  return data || []
 }
 
 // Get upcoming class schedules (e.g., tomorrow's)
 export async function getUpcomingClassSchedules(): Promise<ClassSchedule[]> {
-  const tomorrow = new Date()
-  tomorrow.setDate(tomorrow.getDate() + 1)
-  const tomorrowISO = tomorrow.toISOString().split('T')[0] // YYYY-MM-DD
+  try {
+    const tomorrow = new Date()
+    tomorrow.setDate(tomorrow.getDate() + 1)
+    const tomorrowISO = tomorrow.toISOString().split('T')[0] // YYYY-MM-DD
 
-  const { data, error } = await supabase
-    .from('class_schedules')
-    .select('*, class:classes(*, trainer:trainers(first_name, last_name)), trainer:trainers(first_name, last_name)')
-    .eq('date', tomorrowISO)
-    .order('scheduled_time', { ascending: true })
+    const { data, error } = await supabase
+      .from('class_schedules')
+      .select(`
+        *,
+        class:classes(*),
+        trainer:trainers(first_name, last_name)
+      `)
+      .eq('date', tomorrowISO)
+      .order('scheduled_time', { ascending: true })
 
-  if (error) {
-    console.error('Error fetching upcoming class schedules:', error)
-    throw new Error('Failed to fetch upcoming class schedules')
+    if (error) {
+      console.error('Error fetching upcoming class schedules:', error)
+      return []
+    }
+
+    return data || []
+  } catch (error) {
+    console.error('Failed to fetch upcoming class schedules:', error)
+    return []
   }
-
-  return data || []
 }
 
 // Get class schedule by ID

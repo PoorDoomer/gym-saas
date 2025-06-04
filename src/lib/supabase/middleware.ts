@@ -28,29 +28,14 @@ export async function updateSession(request: NextRequest) {
   // issues with users being randomly logged out.
 
   const {
-    data: { session },
-    error: sessionError
-  } = await supabase.auth.getSession()
-
-  const user = session?.user
-
-  if (sessionError) {
-    console.error('Session error', sessionError)
-  }
-
-  if (!session && user) {
-    await supabase.auth.signOut()
-  }
-
-  if (session && session.expires_at && session.expires_at * 1000 < Date.now()) {
-    await supabase.auth.refreshSession()
-  }
+    data: { user },
+  } = await supabase.auth.getUser()
 
   console.log('Middleware - User after getUser:', user ? user.email : 'No user after getUser');
   console.log('Middleware - Supabase response cookies after setAll:', supabaseResponse.cookies.getAll());
 
   // Define protected routes
-  const protectedRoutes = ['/dashboard', '/members', '/classes', '/trainers', '/settings', '/profile']
+  const protectedRoutes = ['/dashboard', '/members', '/classes', '/trainers', '/settings', '/profile', '/checkins', '/payments', '/reports', '/subscription-plans']
   const authRoutes = ['/login', '/signup']
   
   const isProtectedRoute = protectedRoutes.some(route => 
