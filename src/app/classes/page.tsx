@@ -301,7 +301,7 @@ export default function ClassesPage() {
               <Dialog open={isScheduleDialogOpen} onOpenChange={setIsScheduleDialogOpen}>
                 <DialogTrigger asChild>
                   <Button onClick={() => setEditingSchedule(null)} className="cursor-pointer">
-                    <CalendarPlus className="h-4 w-4 mr-2" />
+                <CalendarPlus className="h-4 w-4 mr-2" />
                     {t('classes.scheduleClass')}
                   </Button>
                 </DialogTrigger>
@@ -366,7 +366,7 @@ export default function ClassesPage() {
                     </Button>
                     <Button onClick={handleScheduleSubmit} className="cursor-pointer">
                       {editingSchedule ? t('common.saveChanges') : t('common.schedule')}
-                    </Button>
+              </Button>
                   </DialogFooter>
                 </DialogContent>
               </Dialog>

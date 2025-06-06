@@ -88,118 +88,29 @@ export async function getTrainerById(id: string): Promise<TrainerWithSports | nu
 // Create new trainer with user account and sports
 export async function createTrainer(trainerData: CreateTrainerData): Promise<CreateTrainerResult> {
   try {
-    // Generate temporary password
-    const temporaryPassword = generateTemporaryPassword()
-    
-    // Step 1: Create user account in Supabase Auth
-    const { data: authData, error: authError } = await supabase.auth.admin.createUser({
-      email: trainerData.email,
-      password: temporaryPassword,
-      email_confirm: true, // Auto-confirm email
-      user_metadata: {
-        role: 'trainer',
-        first_name: trainerData.first_name,
-        last_name: trainerData.last_name,
-        full_name: `${trainerData.first_name} ${trainerData.last_name}`
-      }
+    // Call the API route that handles admin operations
+    const response = await fetch('/api/trainers/create', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(trainerData)
     })
 
-    if (authError) {
-      console.error('Error creating trainer user account:', authError)
+    const result = await response.json()
+
+    if (!response.ok) {
       return {
         trainer: null,
         user_account: null,
         success: false,
-        error: `Failed to create user account: ${authError.message}`
-      }
-    }
-
-    if (!authData.user) {
-      return {
-        trainer: null,
-        user_account: null,
-        success: false,
-        error: 'Failed to create user account: No user returned'
-      }
-    }
-
-    // Step 2: Create trainer record using gymDataService (includes gym_id)
-    const trainer = await gymDataService.createTrainer({
-      user_id: authData.user.id,
-        first_name: trainerData.first_name,
-        last_name: trainerData.last_name,
-        email: trainerData.email,
-        phone: trainerData.phone,
-        specializations: trainerData.specializations,
-        bio: trainerData.bio,
-        hourly_rate: trainerData.hourly_rate,
-        profile_image_url: trainerData.profile_image_url,
-        is_active: true
-    })
-
-    if (!trainer || !trainer[0]) {
-      // Cleanup: Delete the auth user if trainer creation failed
-      await supabase.auth.admin.deleteUser(authData.user.id)
-      
-      return {
-        trainer: null,
-        user_account: null,
-        success: false,
-        error: 'Failed to create trainer record'
-      }
-    }
-
-    // Step 3: Create user_roles entry
-    const { error: roleError } = await supabase
-      .from('user_roles')
-      .insert([{
-        user_id: authData.user.id,
-        role: 'trainer'
-      }])
-
-    if (roleError) {
-      console.error('Error creating trainer role:', roleError)
-      // Continue anyway, role can be added later
-    }
-
-    // Step 4: Create trainer_accounts entry
-    const { error: accountError } = await supabase
-      .from('trainer_accounts')
-      .insert([{
-        user_id: authData.user.id,
-        trainer_id: trainer[0].id
-      }])
-
-    if (accountError) {
-      console.error('Error creating trainer account link:', accountError)
-      // Continue anyway, link can be added later
-    }
-
-    // Step 5: Assign sports if any
-    if (trainerData.selected_sports && trainerData.selected_sports.length > 0) {
-      const sportsData = trainerData.selected_sports.map(sport => ({
-        trainer_id: trainer[0].id,
-        sport_id: sport.sport_id,
-        skill_level: sport.skill_level
-      }))
-
-      const { error: sportsError } = await supabase
-        .from('trainer_sports')
-        .insert(sportsData)
-
-      if (sportsError) {
-        console.error('Error assigning sports to trainer:', sportsError)
-        // Don't throw here, trainer is already created
+        error: result.error || 'Failed to create trainer'
       }
     }
 
     return {
-      trainer: trainer[0],
-      user_account: {
-        email: trainerData.email,
-        temporary_password: temporaryPassword,
-        user_id: authData.user.id
-      },
+      trainer: result.trainer,
+      user_account: result.user_account,
       success: true
     }
   } catch (error) {

@@ -35,23 +35,60 @@ export async function login(formData: FormData) {
   console.log('Login successful for:', data.email)
   console.log('User data:', authData.user?.email)
 
-  // Check if user has any gyms
-  const { data: userGyms, error: gymsError } = await supabase
-    .from('gyms')
-    .select('id')
-    .eq('owner_user_id', authData.user!.id)
-    .eq('is_active', true)
+  // Get user roles to determine where to redirect
+  const { data: userRoles, error: rolesError } = await supabase
+    .from('user_roles')
+    .select('role')
+    .eq('user_id', authData.user!.id)
 
-  if (gymsError) {
-    console.error('Error checking user gyms:', gymsError)
-    // Fallback to gym management if we can't check
-    revalidatePath('/', 'layout')
-    redirect('/gym-management')
+  if (rolesError) {
+    console.error('Error fetching user roles:', rolesError)
   }
 
-  // Always redirect to gym management page - it will handle the flow
+  console.log('User roles found:', userRoles?.map(r => r.role))
+
+  // Determine redirect path based on roles
+  let redirectPath = '/gym-management' // Default for gym owners/admins
+
+  if (userRoles && userRoles.length > 0) {
+    const roles = userRoles.map(r => r.role)
+    
+    // Prioritize roles: admin > trainer > member
+    if (roles.includes('admin')) {
+      redirectPath = '/gym-management'
+      console.log('Redirecting admin to:', redirectPath)
+    } else if (roles.includes('trainer')) {
+      redirectPath = '/trainer-dashboard'
+      console.log('Redirecting trainer to:', redirectPath)
+    } else if (roles.includes('member')) {
+      redirectPath = '/member-dashboard'
+      console.log('Redirecting member to:', redirectPath)
+    }
+  } else {
+    // If no roles found, check if user has gyms (they might be a gym owner)
+    const { data: userGyms, error: gymsError } = await supabase
+      .from('gyms')
+      .select('id')
+      .eq('owner_user_id', authData.user!.id)
+      .eq('is_active', true)
+
+    if (gymsError) {
+      console.error('Error checking user gyms:', gymsError)
+    }
+
+    if (userGyms && userGyms.length > 0) {
+      redirectPath = '/gym-management'
+      console.log('User has gyms, redirecting to gym management')
+    } else {
+      // New user with no roles or gyms - could be new gym owner
+      redirectPath = '/gym-management'
+      console.log('New user, redirecting to gym management for setup')
+    }
+  }
+
+  console.log('Final redirect decision:', redirectPath)
   revalidatePath('/', 'layout')
-  redirect('/gym-management')
+  redirect(redirectPath)
 }
 
 export async function signup(formData: FormData) {

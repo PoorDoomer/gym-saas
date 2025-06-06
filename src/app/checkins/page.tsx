@@ -4,6 +4,9 @@ import { useState, useEffect } from 'react'
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Label } from "@/components/ui/label"
 import { 
   UserCheck, 
   Search, 
@@ -14,6 +17,10 @@ import {
   Loader2
 } from "lucide-react"
 import { getRecentCheckIns, getCheckInStats, CheckIn, CheckInStats } from "@/lib/services/checkins"
+import { QRScanner } from "@/components/QRScanner"
+import { createClient } from '@/lib/supabase/client'
+
+const supabase = createClient()
 
 export default function CheckInsPage() {
   const [recentCheckIns, setRecentCheckIns] = useState<CheckIn[]>([])
@@ -25,10 +32,16 @@ export default function CheckInsPage() {
     growthFromYesterday: 0
   })
   const [loading, setLoading] = useState(true)
+  const [qrScannerOpen, setQrScannerOpen] = useState(false)
+  const [manualCheckInOpen, setManualCheckInOpen] = useState(false)
+  const [members, setMembers] = useState<any[]>([])
+  const [selectedMember, setSelectedMember] = useState<string>('')
+  const [searchTerm, setSearchTerm] = useState('')
 
   // Fetch data on component mount
   useEffect(() => {
     loadData()
+    loadMembers()
   }, [])
 
   const loadData = async () => {
@@ -46,6 +59,106 @@ export default function CheckInsPage() {
       setLoading(false)
     }
   }
+
+  const loadMembers = async () => {
+    try {
+      // Get current gym ID from localStorage (for now)
+      const gymId = localStorage.getItem('selectedGymId')
+      if (!gymId) return
+
+      const { data: membersData, error } = await supabase
+        .from('members')
+        .select('id, first_name, last_name, email')
+        .eq('gym_id', gymId)
+        .eq('status', 'active')
+        .order('first_name', { ascending: true })
+
+      if (error) {
+        console.error('Error loading members:', error)
+      } else {
+        setMembers(membersData || [])
+      }
+    } catch (error) {
+      console.error('Error loading members:', error)
+    }
+  }
+
+  const handleQRScan = async (qrData: string) => {
+    try {
+      console.log('QR Code scanned:', qrData)
+      
+      // Parse QR data - expecting format like "member_id:MEMBER_ID" or just the member ID
+      let memberId = qrData
+      if (qrData.includes(':')) {
+        memberId = qrData.split(':')[1]
+      }
+
+      // Perform check-in
+      await performCheckIn(memberId, 'qr_scan')
+      
+    } catch (error) {
+      console.error('Error processing QR scan:', error)
+      alert('Failed to process QR code. Please try manual check-in.')
+    }
+  }
+
+  const handleManualCheckIn = async () => {
+    if (!selectedMember) {
+      alert('Please select a member')
+      return
+    }
+
+    try {
+      await performCheckIn(selectedMember, 'manual')
+      setManualCheckInOpen(false)
+      setSelectedMember('')
+    } catch (error) {
+      console.error('Error performing manual check-in:', error)
+      alert('Failed to check in member. Please try again.')
+    }
+  }
+
+  const performCheckIn = async (memberId: string, method: 'qr_scan' | 'manual') => {
+    try {
+      const gymId = localStorage.getItem('selectedGymId')
+      if (!gymId) {
+        throw new Error('No gym selected')
+      }
+
+      // Create check-in record
+      const { data, error } = await supabase
+        .from('check_ins')
+        .insert([{
+          member_id: memberId,
+          gym_id: gymId,
+          check_in_time: new Date().toISOString(),
+          check_in_method: method,
+          location: 'Main Entrance'
+        }])
+        .select()
+
+      if (error) {
+        throw error
+      }
+
+      console.log('Check-in successful:', data)
+      
+      // Refresh data
+      await loadData()
+      
+      // Show success message
+      alert('Check-in successful!')
+      
+    } catch (error) {
+      console.error('Error creating check-in:', error)
+      throw error
+    }
+  }
+
+  const filteredMembers = members.filter(member =>
+    `${member.first_name} ${member.last_name}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    member.email.toLowerCase().includes(searchTerm.toLowerCase())
+  )
 
   if (loading) {
     return (
@@ -66,11 +179,11 @@ export default function CheckInsPage() {
               <p className="text-slate-600 dark:text-slate-400">Monitor member check-ins and gym occupancy</p>
             </div>
             <div className="flex items-center space-x-4">
-              <Button variant="outline" className="cursor-pointer">
+              <Button variant="outline" className="cursor-pointer" onClick={() => setQrScannerOpen(true)}>
                 <QrCode className="h-4 w-4 mr-2" />
                 QR Scanner
               </Button>
-              <Button className="cursor-pointer">
+              <Button className="cursor-pointer" onClick={() => setManualCheckInOpen(true)}>
                 <UserCheck className="h-4 w-4 mr-2" />
                 Manual Check-in
               </Button>
@@ -150,15 +263,17 @@ export default function CheckInsPage() {
                 <Input
                   placeholder="Search member by name or ID..."
                   className="pl-10"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
                 />
               </div>
-              <Button className="w-full cursor-pointer">
+              <Button className="w-full cursor-pointer" onClick={() => setManualCheckInOpen(true)}>
                 <UserCheck className="h-4 w-4 mr-2" />
                 Check In Member
               </Button>
               <div className="text-center">
                 <p className="text-sm text-slate-600 dark:text-slate-400 mb-2">Or scan QR code</p>
-                <Button variant="outline" className="w-full cursor-pointer">
+                <Button variant="outline" className="w-full cursor-pointer" onClick={() => setQrScannerOpen(true)}>
                   <QrCode className="h-4 w-4 mr-2" />
                   Open QR Scanner
                 </Button>
@@ -238,6 +353,72 @@ export default function CheckInsPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* QR Scanner Dialog */}
+      <QRScanner
+        isOpen={qrScannerOpen}
+        onClose={() => setQrScannerOpen(false)}
+        onScan={handleQRScan}
+        title="Member Check-in Scanner"
+        description="Scan a member's QR code to check them in"
+      />
+
+      {/* Manual Check-in Dialog */}
+      <Dialog open={manualCheckInOpen} onOpenChange={setManualCheckInOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Manual Check-in</DialogTitle>
+            <DialogDescription>
+              Select a member to check them in manually
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="member-search">Search Member</Label>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                <Input
+                  id="member-search"
+                  placeholder="Search by name or email..."
+                  className="pl-10"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="member-select">Select Member</Label>
+              <Select value={selectedMember} onValueChange={setSelectedMember}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Choose a member" />
+                </SelectTrigger>
+                <SelectContent>
+                  {filteredMembers.map((member) => (
+                    <SelectItem key={member.id} value={member.id}>
+                      {member.first_name} {member.last_name} - {member.email}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {filteredMembers.length === 0 && searchTerm && (
+                <p className="text-sm text-muted-foreground">No members found matching "{searchTerm}"</p>
+              )}
+            </div>
+
+            <div className="flex space-x-2">
+              <Button variant="outline" onClick={() => setManualCheckInOpen(false)} className="flex-1">
+                Cancel
+              </Button>
+              <Button onClick={handleManualCheckIn} className="flex-1" disabled={!selectedMember}>
+                <UserCheck className="h-4 w-4 mr-2" />
+                Check In
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 } 

@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { getTrainerDashboardData, TrainerDashboardData } from '@/lib/services/trainerDashboard'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -19,48 +20,6 @@ import {
   QrCode,
   CheckCircle
 } from 'lucide-react'
-
-interface TrainerDashboardData {
-  trainer: {
-    id: string
-    first_name: string
-    last_name: string
-    email: string
-    specializations: string[]
-    hourly_rate: number
-    bio: string
-  }
-  todayClasses: Array<{
-    id: string
-    name: string
-    start_time: string
-    end_time: string
-    capacity: number
-    bookings: number
-    location: string
-  }>
-  upcomingClasses: Array<{
-    id: string
-    name: string
-    date: string
-    start_time: string
-    end_time: string
-    capacity: number
-    bookings: number
-  }>
-  stats: {
-    classesThisWeek: number
-    totalMembers: number
-    averageAttendance: number
-    rating: number
-  }
-  recentCheckIns: Array<{
-    id: string
-    member_name: string
-    class_name: string
-    check_in_time: string
-  }>
-}
 
 export default function TrainerDashboard() {
   const [dashboardData, setDashboardData] = useState<TrainerDashboardData | null>(null)
@@ -102,92 +61,10 @@ export default function TrainerDashboard() {
         return
       }
 
-      // Get trainer profile
-      const { data: trainerData } = await supabase
-        .from('trainers')
-        .select('*')
-        .eq('user_id', user.id)
-        .single()
+      // Load real dashboard data
+      const dashboardData = await getTrainerDashboardData(user.id)
+      setDashboardData(dashboardData)
 
-      if (!trainerData) {
-        console.error('No trainer profile found for user')
-        return
-      }
-
-      // Mock data for now - in real implementation, these would be proper queries
-      const mockDashboardData: TrainerDashboardData = {
-        trainer: {
-          id: trainerData.id,
-          first_name: trainerData.first_name,
-          last_name: trainerData.last_name,
-          email: trainerData.email,
-          specializations: trainerData.specializations || [],
-          hourly_rate: trainerData.hourly_rate || 0,
-          bio: trainerData.bio || ''
-        },
-        todayClasses: [
-          {
-            id: '1',
-            name: 'Morning Yoga',
-            start_time: '09:00',
-            end_time: '10:00',
-            capacity: 20,
-            bookings: 15,
-            location: 'Studio A'
-          },
-          {
-            id: '2', 
-            name: 'HIIT Training',
-            start_time: '18:00',
-            end_time: '19:00',
-            capacity: 15,
-            bookings: 12,
-            location: 'Main Gym'
-          }
-        ],
-        upcomingClasses: [
-          {
-            id: '3',
-            name: 'Power Yoga',
-            date: 'Tomorrow',
-            start_time: '07:00',
-            end_time: '08:00',
-            capacity: 25,
-            bookings: 18
-          },
-          {
-            id: '4',
-            name: 'Strength Training',
-            date: 'Wednesday',
-            start_time: '17:30',
-            end_time: '18:30',
-            capacity: 12,
-            bookings: 8
-          }
-        ],
-        stats: {
-          classesThisWeek: 8,
-          totalMembers: 45,
-          averageAttendance: 85,
-          rating: 4.8
-        },
-        recentCheckIns: [
-          {
-            id: '1',
-            member_name: 'John Smith',
-            class_name: 'Morning Yoga',
-            check_in_time: '08:55 AM'
-          },
-          {
-            id: '2',
-            member_name: 'Sarah Johnson',
-            class_name: 'HIIT Training',
-            check_in_time: '5:58 PM'
-          }
-        ]
-      }
-
-      setDashboardData(mockDashboardData)
     } catch (error) {
       console.error('Error loading trainer dashboard:', error)
     } finally {
@@ -198,6 +75,22 @@ export default function TrainerDashboard() {
   const handleLogout = async () => {
     await supabase.auth.signOut()
     router.push('/login')
+  }
+
+  const handleStartCheckIn = () => {
+    router.push('/trainer/checkins')
+  }
+
+  const handleMyClassMembers = () => {
+    router.push('/trainer/class-members')
+  }
+
+  const handleMySchedule = () => {
+    router.push('/trainer/schedule')
+  }
+
+  const handleSettings = () => {
+    router.push('/trainer/profile')
   }
 
   const getInitials = (firstName: string, lastName: string) => {
@@ -248,7 +141,7 @@ export default function TrainerDashboard() {
               </div>
             </div>
             <div className="flex items-center space-x-3">
-              <Button variant="outline" size="sm">
+              <Button variant="outline" size="sm" onClick={handleSettings}>
                 <Settings className="h-4 w-4 mr-2" />
                 Settings
               </Button>
@@ -360,7 +253,7 @@ export default function TrainerDashboard() {
                         >
                           {Math.round((classItem.bookings / classItem.capacity) * 100)}% Full
                         </Badge>
-                        <Button size="sm" variant="outline">
+                        <Button size="sm" variant="outline" onClick={() => handleStartCheckIn()}>
                           <QrCode className="h-4 w-4 mr-2" />
                           Check-in
                         </Button>
@@ -469,17 +362,17 @@ export default function TrainerDashboard() {
                 <CardTitle>Quick Actions</CardTitle>
               </CardHeader>
               <CardContent className="space-y-2">
-                <Button className="w-full" variant="outline">
+                <Button className="w-full" variant="outline" onClick={handleStartCheckIn}>
                   <QrCode className="h-4 w-4 mr-2" />
-                  Start Check-in Session
+                  Start Class Check-in
                 </Button>
-                <Button className="w-full" variant="outline">
+                <Button className="w-full" variant="outline" onClick={handleMyClassMembers}>
                   <Users className="h-4 w-4 mr-2" />
-                  View Member List
+                  My Class Members
                 </Button>
-                <Button className="w-full" variant="outline">
+                <Button className="w-full" variant="outline" onClick={handleMySchedule}>
                   <Calendar className="h-4 w-4 mr-2" />
-                  Manage Schedule
+                  My Schedule
                 </Button>
               </CardContent>
             </Card>

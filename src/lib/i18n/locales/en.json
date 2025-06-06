@@ -264,5 +264,85 @@
     "agreeToTerms": "I agree to the",
     "termsAndConditions": "Terms and Conditions",
     "privacyPolicy": "Privacy Policy"
+  },
+  "homepage": {
+    "title": "FitLife",
+    "features": "Features",
+    "pricing": "Pricing",
+    "testimonials": "Testimonials",
+    "login": "Login",
+    "getStarted": "Get Started",
+    "hero": {
+      "title": "Transform Your Gym Management",
+      "subtitle": "Complete gym management solution with member tracking, class scheduling, payments, and analytics",
+      "cta": "Start Your Free Trial",
+      "learnMore": "Learn More"
+    },
+    "features": {
+      "title": "Everything You Need to Run Your Gym",
+      "subtitle": "Comprehensive features designed for modern fitness businesses",
+      "memberManagement": {
+        "title": "Member Management",
+        "description": "Track members, manage memberships, and handle renewals with ease"
+      },
+      "classScheduling": {
+        "title": "Class Scheduling",
+        "description": "Schedule classes, manage bookings, and track attendance effortlessly"
+      },
+      "paymentProcessing": {
+        "title": "Payment Processing",
+        "description": "Handle payments, subscriptions, and financial reporting seamlessly"
+      },
+      "analytics": {
+        "title": "Analytics & Reports",
+        "description": "Get insights into your business with comprehensive analytics and reports"
+      },
+      "mobileAccess": {
+        "title": "Mobile Access",
+        "description": "Access your gym management tools from anywhere, anytime"
+      },
+      "security": {
+        "title": "Secure & Reliable",
+        "description": "Bank-level security with 99.9% uptime guarantee"
+      }
+    },
+    "pricing": {
+      "title": "Simple, Transparent Pricing",
+      "subtitle": "Choose the plan that fits your gym's needs",
+      "monthly": "Monthly",
+      "yearly": "Yearly",
+      "save": "Save 20%",
+      "perMonth": "per month",
+      "getStarted": "Get Started",
+      "popular": "Most Popular",
+      "features": "Everything in Basic, plus:",
+      "basicFeatures": [
+        "Up to 100 members",
+        "Basic reporting",
+        "Email support"
+      ],
+      "proFeatures": [
+        "Unlimited members",
+        "Advanced analytics",
+        "Priority support",
+        "Custom branding"
+      ],
+      "enterpriseFeatures": [
+        "Multi-location support",
+        "API access",
+        "Dedicated support",
+        "Custom integrations"
+      ]
+    },
+    "testimonials": {
+      "title": "What Our Customers Say",
+      "subtitle": "Join thousands of gym owners who trust FitLife"
+    },
+    "cta": {
+      "title": "Ready to Transform Your Gym?",
+      "subtitle": "Join thousands of gym owners who trust FitLife to manage their business",
+      "button": "Start Free Trial",
+      "noCredit": "No credit card required"
+    }
   }
 } 
